@@ -1,0 +1,212 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "API Response Time",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "app/arbor-production-alb/xxx", { "stat": "Average", "period": 60 }],
+          ["...", { "stat": "p95", "period": 60 }],
+          ["...", { "stat": "p99", "period": 60 }]
+        ],
+        "region": "us-east-1",
+        "annotations": {
+          "horizontal": [
+            { "value": 2, "label": "Target (2s)", "color": "#ff0000" }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Request Count & Errors",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "app/arbor-production-alb/xxx", { "stat": "Sum", "period": 60 }],
+          [".", "HTTPCode_Target_2XX_Count", ".", ".", { "stat": "Sum", "period": 60, "color": "#2ca02c" }],
+          [".", "HTTPCode_Target_4XX_Count", ".", ".", { "stat": "Sum", "period": 60, "color": "#ff7f0e" }],
+          [".", "HTTPCode_Target_5XX_Count", ".", ".", { "stat": "Sum", "period": 60, "color": "#d62728" }]
+        ],
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 6,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ECS CPU Utilization",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/ECS", "CPUUtilization", "ServiceName", "arbor-production", "ClusterName", "arbor-cluster", { "stat": "Average", "period": 60 }]
+        ],
+        "region": "us-east-1",
+        "annotations": {
+          "horizontal": [
+            { "value": 80, "label": "Alarm Threshold", "color": "#ff0000" }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 6,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ECS Memory Utilization",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/ECS", "MemoryUtilization", "ServiceName", "arbor-production", "ClusterName", "arbor-cluster", { "stat": "Average", "period": 60 }]
+        ],
+        "region": "us-east-1",
+        "annotations": {
+          "horizontal": [
+            { "value": 80, "label": "Alarm Threshold", "color": "#ff0000" }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 6,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "ECS Running Tasks",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["ECS/ContainerInsights", "RunningTaskCount", "ServiceName", "arbor-production", "ClusterName", "arbor-cluster", { "stat": "Average", "period": 60 }],
+          [".", "DesiredTaskCount", ".", ".", ".", ".", { "stat": "Average", "period": 60 }]
+        ],
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 12,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "RDS Database Connections",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", "arbor-production-db", { "stat": "Average", "period": 60 }]
+        ],
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 12,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "RDS CPU & Memory",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "arbor-production-db", { "stat": "Average", "period": 60 }],
+          [".", "FreeableMemory", ".", ".", { "stat": "Average", "period": 60, "yAxis": "right" }]
+        ],
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 12,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "title": "RDS Read/Write Latency",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/RDS", "ReadLatency", "DBInstanceIdentifier", "arbor-production-db", { "stat": "Average", "period": 60 }],
+          [".", "WriteLatency", ".", ".", { "stat": "Average", "period": 60 }]
+        ],
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 18,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "ElastiCache Redis - Memory & CPU",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/ElastiCache", "DatabaseMemoryUsagePercentage", "CacheClusterId", "arbor-production-redis", { "stat": "Average", "period": 60 }],
+          [".", "EngineCPUUtilization", ".", ".", { "stat": "Average", "period": 60 }]
+        ],
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 18,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "ElastiCache - Cache Hits & Misses",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["AWS/ElastiCache", "CacheHits", "CacheClusterId", "arbor-production-redis", { "stat": "Sum", "period": 60, "color": "#2ca02c" }],
+          [".", "CacheMisses", ".", ".", { "stat": "Sum", "period": 60, "color": "#d62728" }]
+        ],
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 24,
+      "width": 24,
+      "height": 2,
+      "properties": {
+        "markdown": "## Application Health\n\nMonitoring endpoints: `/api/v1/health` | `/api/v1/health/detailed` | `/api/v1/metrics` | `/api/v1/metrics/ready` | `/api/v1/metrics/live`"
+      }
+    },
+    {
+      "type": "log",
+      "x": 0,
+      "y": 26,
+      "width": 24,
+      "height": 6,
+      "properties": {
+        "title": "Recent Error Logs",
+        "query": "SOURCE '/arbor/production/backend' | filter @message like /error|ERROR|exception|Exception/ | fields @timestamp, @message | sort @timestamp desc | limit 50",
+        "region": "us-east-1",
+        "view": "table"
+      }
+    }
+  ]
+}
