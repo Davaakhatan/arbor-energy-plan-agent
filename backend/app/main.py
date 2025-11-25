@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.core.database import close_db, init_db
 from app.core.logging import get_logger, setup_logging
 from app.core.redis import close_redis, init_redis
+from app.middleware.rate_limit import RateLimitMiddleware
 
 # Initialize logging
 setup_logging()
@@ -73,6 +74,14 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Add rate limiting middleware
+    if settings.environment != "test":
+        app.add_middleware(
+            RateLimitMiddleware,
+            requests_per_minute=getattr(settings, "rate_limit_per_minute", 60),
+            requests_per_hour=getattr(settings, "rate_limit_per_hour", 1000),
+        )
 
     # Include API routes
     app.include_router(api_router, prefix=settings.api_v1_prefix)

@@ -19,9 +19,11 @@ from app.schemas.recommendation import (
     RecommendationResponse,
     RecommendationSetResponse,
     RiskFlag,
+    UsageAnalysisResponse,
 )
 from app.services.cost_calculator import CostCalculator
 from app.services.scoring import ScoringEngine
+from app.services.usage_analyzer import UsageAnalyzer
 
 logger = get_logger(__name__)
 
@@ -37,6 +39,7 @@ class RecommendationService:
         self.pref_repo = PreferenceRepository(db)
         self.cost_calculator = CostCalculator()
         self.scoring_engine = ScoringEngine()
+        self.usage_analyzer = UsageAnalyzer()
 
     async def generate_recommendations(
         self,
@@ -144,10 +147,14 @@ class RecommendationService:
         # Calculate processing time
         processing_time_ms = int((time.perf_counter() - start_time) * 1000)
 
+        # Perform usage pattern analysis
+        usage_analysis = self._analyze_usage_patterns(customer)
+
         # Build response
         response = RecommendationSetResponse(
             customer_id=customer.id,
             recommendations=recommendations,
+            usage_analysis=usage_analysis,
             current_annual_cost=current_cost,
             best_savings=max(r.projected_annual_savings for r in recommendations)
             if recommendations
@@ -392,6 +399,35 @@ class RecommendationService:
             )
 
         return warnings
+
+    def _analyze_usage_patterns(
+        self,
+        customer: Customer,
+    ) -> UsageAnalysisResponse | None:
+        """Analyze customer usage patterns."""
+        if not customer.usage_data:
+            return None
+
+        analysis = self.usage_analyzer.analyze(customer.usage_data)
+        insights = self.usage_analyzer.get_plan_suitability_insights(analysis)
+
+        return UsageAnalysisResponse(
+            total_annual_kwh=analysis.total_annual_kwh,
+            average_monthly_kwh=analysis.average_monthly_kwh,
+            min_monthly_kwh=analysis.min_monthly_kwh,
+            max_monthly_kwh=analysis.max_monthly_kwh,
+            seasonal_pattern=analysis.seasonal_pattern.value,
+            seasonal_variation_percent=analysis.seasonal_variation_percent,
+            peak_months=analysis.peak_months,
+            low_months=analysis.low_months,
+            usage_trend=analysis.usage_trend.value,
+            trend_percent_change=analysis.trend_percent_change,
+            consumption_tier=analysis.consumption_tier,
+            is_high_consumer=analysis.is_high_consumer,
+            months_of_data=analysis.months_of_data,
+            data_quality_score=analysis.data_quality_score,
+            insights=insights,
+        )
 
     async def _cache_recommendations(
         self,

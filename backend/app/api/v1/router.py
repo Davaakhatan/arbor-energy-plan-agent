@@ -2,9 +2,16 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import customers, health, ingestion, plans, preferences, recommendations
+from app.api.v1.endpoints import auth, customers, health, ingestion, plans, preferences, recommendations
 
 api_router = APIRouter()
+
+# Authentication endpoints
+api_router.include_router(
+    auth.router,
+    prefix="/auth",
+    tags=["authentication"],
+)
 
 # Health check endpoints
 api_router.include_router(

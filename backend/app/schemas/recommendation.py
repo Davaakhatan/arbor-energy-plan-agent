@@ -10,6 +10,42 @@ from app.schemas.plan import EnergyPlanResponse
 from app.schemas.preference import CustomerPreferenceCreate
 
 
+class UsageAnalysisResponse(BaseModel):
+    """Response schema for usage pattern analysis."""
+
+    # Basic statistics
+    total_annual_kwh: Decimal
+    average_monthly_kwh: Decimal
+    min_monthly_kwh: Decimal
+    max_monthly_kwh: Decimal
+
+    # Seasonal analysis
+    seasonal_pattern: str = Field(
+        description="summer_peak, winter_peak, dual_peak, flat, or unknown"
+    )
+    seasonal_variation_percent: Decimal
+    peak_months: list[int] = Field(description="Months with highest usage (1-12)")
+    low_months: list[int] = Field(description="Months with lowest usage (1-12)")
+
+    # Trend analysis
+    usage_trend: str = Field(description="increasing, decreasing, stable, or unknown")
+    trend_percent_change: Decimal
+
+    # Consumption insights
+    consumption_tier: str = Field(description="low, medium, high, or very_high")
+    is_high_consumer: bool
+
+    # Data quality
+    months_of_data: int
+    data_quality_score: Decimal = Field(ge=0, le=1)
+
+    # Plan suitability insights
+    insights: dict[str, str] = Field(
+        default_factory=dict,
+        description="Personalized insights based on usage patterns",
+    )
+
+
 class RecommendationRequest(BaseModel):
     """Request schema for generating recommendations."""
 
@@ -80,6 +116,12 @@ class RecommendationSetResponse(BaseModel):
     recommendations: list[RecommendationResponse] = Field(
         max_length=3,
         description="Top 3 plan recommendations",
+    )
+
+    # Usage analysis
+    usage_analysis: UsageAnalysisResponse | None = Field(
+        default=None,
+        description="Analysis of customer usage patterns",
     )
 
     # Summary
