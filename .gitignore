@@ -45,3 +45,10 @@ htmlcov/
 *.bak
 *.tmp
 .cache/
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+*.tfstate
+*.tfstate.backup
+

@@ -144,7 +144,7 @@ jobs:
 
       - name: Run tests
         working-directory: frontend
-        run: pnpm test --coverage
+        run: pnpm test
 
       - name: Build
         working-directory: frontend
