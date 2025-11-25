@@ -18,8 +18,8 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY_BACKEND: arbor-backend
-  ECR_REPOSITORY_FRONTEND: arbor-frontend
+  ECR_REPOSITORY_BACKEND: arbor-staging-backend
+  ECR_REPOSITORY_FRONTEND: arbor-staging-frontend
 
 jobs:
   # Build and push images to ECR
