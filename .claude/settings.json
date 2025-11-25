@@ -1,0 +1,6 @@
+{
+  "rules": [
+    "Never add Claude Code attribution or Co-Authored-By lines to git commits",
+    "Keep commit messages clean and professional without AI-generated signatures"
+  ]
+}
