@@ -1,79 +1,193 @@
 # AI Energy Plan Recommendation Agent
 
-**Organization:** Arbor  
-**Project ID:** 85twgWvlJ3Z1g6dpiGy5_1762214728178
+**Organization:** Arbor
+**Status:** Production Ready (~97% Complete)
 
 ---
 
 ## Overview
 
-The AI Energy Plan Recommendation Agent is an intelligent solution that helps customers in deregulated energy markets find optimal energy plans by analyzing their usage patterns, preferences, and existing plans. The system provides personalized, explainable recommendations for the top 3 energy plans.
+The AI Energy Plan Recommendation Agent is an intelligent solution that helps customers in deregulated energy markets find optimal energy plans. It analyzes usage patterns, preferences, and existing plans to provide personalized, explainable recommendations for the top 3 energy plans.
+
+### Key Features
+
+- Multi-Criteria Decision Analysis (MCDA) for intelligent plan ranking
+- Personalized recommendations based on user preferences
+- Plain-language explanations for each recommendation
+- Risk flagging for variable rates, long contracts, and high early termination fees
+- Seasonal usage pattern detection
+- GDPR-compliant data handling
+- WCAG 2.1 accessible interface
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Backend | Python 3.11, FastAPI, SQLAlchemy 2.0 |
+| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS |
+| Database | PostgreSQL with TimescaleDB |
+| Cache | Redis |
+| Infrastructure | Docker, Nginx, AWS (ECS, RDS, ElastiCache) |
+
+## Quick Start
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Python 3.11+
+- Node.js 20+
+- pnpm
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/Davaakhatan/arbor-energy-plan-agent.git
+cd arbor-energy-plan-agent
+
+# Start infrastructure services
+docker-compose up -d postgres redis
+
+# Backend setup
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -e ".[dev]"
+alembic upgrade head
+python -m app.scripts.seed_data
+uvicorn app.main:app --reload --port 8000
+
+# Frontend setup (new terminal)
+cd frontend
+pnpm install
+pnpm dev
+```
+
+### Access
+
+- **Frontend**: <http://localhost:3000>
+- **Backend API**: <http://localhost:8000>
+- **API Documentation**: <http://localhost:8000/docs>
 
 ## Project Structure
 
 ```
 arbor-energy-plan-agent/
-├── docs/
-│   ├── PRD.md              # Product Requirements Document
-│   ├── TASKS.md            # Task list and project tracking
-│   └── ARCHITECTURE.md     # System architecture documentation
-├── memory-bank/            # Project memory and context
-│   ├── README.md           # Memory bank overview
-│   ├── projectbrief.md     # Foundation document
-│   ├── productContext.md   # Why the project exists
-│   ├── systemPatterns.md   # System architecture patterns
-│   ├── techContext.md      # Technology stack
-│   ├── activeContext.md    # Current work focus
-│   ├── progress.md         # Status tracking
-│   └── phases-and-tasks.md # Detailed task breakdown
-└── README.md               # This file
+├── backend/                 # FastAPI backend
+│   ├── app/
+│   │   ├── api/v1/         # API endpoints
+│   │   ├── core/           # Config, database, logging
+│   │   ├── middleware/     # Rate limiting, timing
+│   │   ├── models/         # SQLAlchemy models
+│   │   ├── repositories/   # Database access layer
+│   │   ├── schemas/        # Pydantic schemas
+│   │   └── services/       # Business logic (recommendation, scoring)
+│   ├── alembic/            # Database migrations
+│   └── tests/              # Test suites (unit, e2e, security, performance)
+├── frontend/               # Next.js frontend
+│   └── src/
+│       ├── app/            # Next.js app router
+│       ├── components/     # React components
+│       └── lib/            # API client, utilities
+├── docs/                   # Documentation
+├── monitoring/             # CloudWatch configs, alerts
+├── nginx/                  # Reverse proxy config
+└── .github/workflows/      # CI/CD pipelines
 ```
 
 ## Documentation
 
-- **[PRD.md](docs/PRD.md)** - Complete product requirements and specifications
-- **[TASKS.md](docs/TASKS.md)** - Detailed task breakdown and project tracking
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and technical design
-- **[memory-bank/](memory-bank/)** - Project memory and context preservation
-  - See [memory-bank/README.md](memory-bank/README.md) for structure and usage
+| Document | Description |
+|----------|-------------|
+| [PRD.md](docs/PRD.md) | Product Requirements Document |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture |
+| [TASKS.md](docs/TASKS.md) | Task tracking and progress |
+| [DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) | Developer onboarding |
+| [API_USER_GUIDE.md](docs/API_USER_GUIDE.md) | API integration guide |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Production deployment |
+| [GDPR_COMPLIANCE.md](docs/GDPR_COMPLIANCE.md) | GDPR compliance |
+| [PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md) | Privacy policy |
 
-## Quick Start
+## API Endpoints
 
-_To be updated as development progresses_
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/customers` | Create customer with usage data |
+| GET | `/api/v1/customers/{id}` | Get customer details |
+| PUT | `/api/v1/preferences/{id}` | Update preferences |
+| POST | `/api/v1/recommendations` | Generate recommendations |
+| GET | `/api/v1/plans` | List available plans |
+| GET | `/api/v1/health` | Health check |
+| GET | `/api/v1/metrics` | Application metrics |
 
-## Key Requirements
+## Performance
 
-### Performance
-- Recommendations must be generated within 2 seconds
+- **Target**: < 2 seconds for recommendation generation
+- **Caching**: Redis with cache warming
+- **Optimization**: Database indexes, eager loading, connection pooling
 
-### Compliance
-- GDPR compliant
-- WCAG 2.1 compliant
+## Testing
 
-### Scalability
-- Must handle thousands of concurrent users
-- Cloud-based infrastructure (GCP or AWS)
+```bash
+# Backend tests
+cd backend
+pytest                          # All tests
+pytest --cov=app               # With coverage
+pytest tests/unit/             # Unit tests only
+pytest tests/e2e/              # End-to-end tests
+pytest tests/security/         # Security tests
 
-## Success Metrics
+# Frontend tests
+cd frontend
+pnpm test                      # All tests
+pnpm test:coverage            # With coverage
 
-- **Conversion Rate**: 20% uplift target
-- **NPS**: 10 point increase target
-- **Support Burden**: 30% reduction target
-- **User Engagement**: 15% increase in interaction time
+# Load testing
+cd backend
+locust -f tests/performance/locustfile.py --host=http://localhost:8000
+```
 
-## Development Status
+## Deployment
 
-🚧 **Project Initialization** - Project structure and documentation created.
+```bash
+# Production build
+docker-compose -f docker-compose.prod.yml build
 
-## Contributing
+# Deploy
+docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+```
 
-_To be updated with contribution guidelines_
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions.
+
+## Compliance
+
+- **GDPR**: Full compliance with data subject rights
+- **WCAG 2.1**: Accessible UI with semantic HTML, ARIA labels, keyboard navigation
+- **Security**: Rate limiting, input validation, SQL injection prevention, TLS 1.3
+
+## Project Status
+
+| Phase | Status | Completion |
+|-------|--------|------------|
+| Setup & Planning | ✅ Complete | 100% |
+| Data Infrastructure | ✅ Complete | 100% |
+| Recommendation Engine | ✅ Complete | 100% |
+| Preferences & Scoring | ✅ Complete | 100% |
+| Risk Awareness | ✅ Complete | 100% |
+| API Development | ✅ Complete | 100% |
+| Frontend | ✅ Complete | 100% |
+| Performance | ✅ Complete | 100% |
+| Security | 🚧 In Progress | 85% |
+| Testing | ✅ Complete | 100% |
+| Deployment | 🚧 In Progress | 80% |
+| Documentation | ✅ Complete | 100% |
+
+### Overall: ~97% Complete
 
 ## License
 
-_To be determined_
+MIT License
 
 ---
 
-For detailed information, please refer to the documentation in the `docs/` directory.
-
+For questions or support, contact: <dev@arbor-energy.com>
