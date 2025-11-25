@@ -1,0 +1,33 @@
+# Example Terraform variables file
+# Copy to terraform.tfvars and fill in your values
+
+aws_region  = "us-east-1"
+environment = "production"
+domain_name = "arbor-energy.com"
+
+# VPC
+vpc_cidr = "10.0.0.0/16"
+
+# ECS - Backend
+backend_cpu           = 512
+backend_memory        = 1024
+backend_desired_count = 2
+backend_min_capacity  = 2
+backend_max_capacity  = 10
+
+# ECS - Frontend
+frontend_cpu           = 256
+frontend_memory        = 512
+frontend_desired_count = 2
+frontend_min_capacity  = 2
+frontend_max_capacity  = 6
+
+# RDS
+db_instance_class    = "db.t3.medium"
+db_allocated_storage = 20
+db_name              = "arbor_energy"
+db_username          = "arbor_admin"
+
+# ElastiCache
+redis_node_type       = "cache.t3.micro"
+redis_num_cache_nodes = 1

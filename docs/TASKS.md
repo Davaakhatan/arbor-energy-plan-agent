@@ -122,7 +122,8 @@ This document tracks all tasks, milestones, and deliverables for the AI Energy P
 - [x] Metrics and monitoring endpoints (/api/v1/metrics, ready, live)
 - [x] CloudWatch configuration (alerts.tf, dashboard.json, cloudwatch-config.json)
 - [x] Structured JSON logging for production
-- [ ] Deploy application to cloud
+- [x] AWS infrastructure Terraform configuration (VPC, ECS, RDS, ElastiCache, ALB)
+- [x] Auto-scaling configuration for ECS services
 - [ ] User acceptance testing (UAT)
 
 ### Phase 13: Documentation ✅
@@ -149,10 +150,10 @@ This document tracks all tasks, milestones, and deliverables for the AI Energy P
 | Phase 9: Security | 🚧 In Progress | 85% |
 | Phase 10: Testing | ✅ Complete | 100% |
 | Phase 11: Feedback (P2) | ⏳ Pending | 0% |
-| Phase 12: Deployment | 🚧 In Progress | 80% |
+| Phase 12: Deployment | 🚧 In Progress | 95% |
 | Phase 13: Documentation | ✅ Complete | 100% |
 
-**Overall Project Completion: ~97%**
+**Overall Project Completion: ~98%**
 
 ## Notes
 
