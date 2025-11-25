@@ -294,3 +294,168 @@ class TestUsageAnalyzer:
         # High consumer should get advice about rate per kWh
         if "consumption" in insights:
             assert "rate" in insights["consumption"].lower()
+
+    def test_dual_peak_pattern(self, analyzer: UsageAnalyzer) -> None:
+        """Test detection of dual peak pattern (heating and AC)."""
+        customer_id = uuid4()
+        data = []
+
+        # High in both summer and winter
+        monthly_kwh = {
+            1: 1400,   # January - high (heating)
+            2: 1350,   # February - high
+            3: 900,    # March - shoulder
+            4: 850,    # April
+            5: 900,    # May
+            6: 1300,   # June - high (AC)
+            7: 1500,   # July - peak
+            8: 1400,   # August - high
+            9: 950,    # September
+            10: 850,   # October
+            11: 1000,  # November
+            12: 1350,  # December - high
+        }
+
+        for month, kwh in monthly_kwh.items():
+            usage = CustomerUsage.__new__(CustomerUsage)
+            usage.id = uuid4()
+            usage.customer_id = customer_id
+            usage.usage_date = date(2024, month, 1)
+            usage.kwh_usage = Decimal(str(kwh))
+            data.append(usage)
+
+        analysis = analyzer.analyze(data)
+
+        assert analysis.seasonal_pattern == SeasonalPattern.DUAL_PEAK
+
+    def test_decreasing_trend(self, analyzer: UsageAnalyzer) -> None:
+        """Test detection of decreasing usage trend."""
+        customer_id = uuid4()
+        data = []
+
+        base_kwh = 1400
+        for month in range(1, 13):
+            usage = CustomerUsage.__new__(CustomerUsage)
+            usage.id = uuid4()
+            usage.customer_id = customer_id
+            usage.usage_date = date(2024, month, 1)
+            # Decrease by 50 kWh each month
+            usage.kwh_usage = Decimal(str(base_kwh - (month * 50)))
+            data.append(usage)
+
+        analysis = analyzer.analyze(data)
+
+        assert analysis.usage_trend == UsageTrend.DECREASING
+        assert analysis.trend_percent_change < Decimal("0")
+
+    def test_stable_trend(self, analyzer: UsageAnalyzer) -> None:
+        """Test detection of stable usage trend."""
+        customer_id = uuid4()
+        data = []
+
+        # Very consistent usage with minor variation
+        monthly_kwh = [900, 905, 895, 910, 890, 900, 905, 895, 910, 890, 900, 905]
+
+        for month, kwh in enumerate(monthly_kwh, 1):
+            usage = CustomerUsage.__new__(CustomerUsage)
+            usage.id = uuid4()
+            usage.customer_id = customer_id
+            usage.usage_date = date(2024, month, 1)
+            usage.kwh_usage = Decimal(str(kwh))
+            data.append(usage)
+
+        analysis = analyzer.analyze(data)
+
+        assert analysis.usage_trend == UsageTrend.STABLE
+        assert abs(analysis.trend_percent_change) < Decimal("5")
+
+    def test_medium_consumption_tier(self, analyzer: UsageAnalyzer) -> None:
+        """Test medium consumption tier detection."""
+        customer_id = uuid4()
+        data = []
+
+        # Medium usage household (~8400 kWh/year)
+        for month in range(1, 13):
+            usage = CustomerUsage.__new__(CustomerUsage)
+            usage.id = uuid4()
+            usage.customer_id = customer_id
+            usage.usage_date = date(2024, month, 1)
+            usage.kwh_usage = Decimal("700")
+            data.append(usage)
+
+        analysis = analyzer.analyze(data)
+
+        assert analysis.consumption_tier == "medium"
+        assert analysis.is_high_consumer is False
+
+    def test_very_high_consumption_tier(self, analyzer: UsageAnalyzer) -> None:
+        """Test very high consumption tier detection."""
+        customer_id = uuid4()
+        data = []
+
+        # Very high usage household (~18000 kWh/year)
+        for month in range(1, 13):
+            usage = CustomerUsage.__new__(CustomerUsage)
+            usage.id = uuid4()
+            usage.customer_id = customer_id
+            usage.usage_date = date(2024, month, 1)
+            usage.kwh_usage = Decimal("1500")
+            data.append(usage)
+
+        analysis = analyzer.analyze(data)
+
+        assert analysis.consumption_tier == "very_high"
+        assert analysis.is_high_consumer is True
+
+    def test_plan_suitability_insights_winter_peak(
+        self, analyzer: UsageAnalyzer, winter_peak_data: list[CustomerUsage]
+    ) -> None:
+        """Test plan suitability insights for winter peak pattern."""
+        analysis = analyzer.analyze(winter_peak_data)
+        insights = analyzer.get_plan_suitability_insights(analysis)
+
+        assert "seasonal" in insights
+        assert "winter" in insights["seasonal"].lower() or "heating" in insights["seasonal"].lower()
+
+    def test_plan_suitability_insights_flat_pattern(
+        self, analyzer: UsageAnalyzer, flat_usage_data: list[CustomerUsage]
+    ) -> None:
+        """Test plan suitability insights for flat pattern."""
+        analysis = analyzer.analyze(flat_usage_data)
+        insights = analyzer.get_plan_suitability_insights(analysis)
+
+        assert "seasonal" in insights
+        assert "consistent" in insights["seasonal"].lower() or "any rate" in insights["seasonal"].lower()
+
+    def test_plan_suitability_insights_increasing_trend(
+        self, analyzer: UsageAnalyzer, increasing_trend_data: list[CustomerUsage]
+    ) -> None:
+        """Test insights for increasing usage trend."""
+        analysis = analyzer.analyze(increasing_trend_data)
+        insights = analyzer.get_plan_suitability_insights(analysis)
+
+        assert "trend" in insights
+        assert "increasing" in insights["trend"].lower()
+
+    def test_annual_usage_estimation(
+        self, analyzer: UsageAnalyzer
+    ) -> None:
+        """Test that annual usage is estimated correctly from partial data."""
+        customer_id = uuid4()
+        data = []
+
+        # 6 months of 1000 kWh each
+        for month in range(1, 7):
+            usage = CustomerUsage.__new__(CustomerUsage)
+            usage.id = uuid4()
+            usage.customer_id = customer_id
+            usage.usage_date = date(2024, month, 1)
+            usage.kwh_usage = Decimal("1000")
+            data.append(usage)
+
+        analysis = analyzer.analyze(data)
+
+        # Total should be 6000, but annual estimate should be ~12000
+        assert analysis.total_annual_kwh == Decimal("6000")
+        # The analyzer should identify this as high consumption based on annualized rate
+        assert analysis.is_high_consumer is True

@@ -8,7 +8,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.core.redis import CacheService
+from app.core.redis import CacheKeys, CacheService
 from app.models.customer import Customer
 from app.models.plan import EnergyPlan
 from app.models.preference import CustomerPreference
@@ -21,6 +21,7 @@ from app.schemas.recommendation import (
     RiskFlag,
     UsageAnalysisResponse,
 )
+from app.services.cached_plan_service import CachedPlanService
 from app.services.cost_calculator import CostCalculator
 from app.services.scoring import ScoringEngine
 from app.services.usage_analyzer import UsageAnalyzer
@@ -36,6 +37,7 @@ class RecommendationService:
         self.db = db
         self.cache = cache
         self.plan_repo = PlanRepository(db)
+        self.cached_plans = CachedPlanService(db, cache)
         self.pref_repo = PreferenceRepository(db)
         self.cost_calculator = CostCalculator()
         self.scoring_engine = ScoringEngine()
@@ -56,8 +58,8 @@ class RecommendationService:
         # Get or create preferences
         preferences = await self._get_preferences(customer.id, preferences_override)
 
-        # Get all active plans
-        plans = await self.plan_repo.get_all(active_only=True)
+        # Get all active plans (cached)
+        plans = await self.cached_plans.get_all_active_plans()
 
         # Filter plans based on hard constraints
         eligible_plans = self._filter_by_constraints(plans, preferences)
@@ -68,10 +70,10 @@ class RecommendationService:
             eligible_plans,
         )
 
-        # Calculate current plan cost if available
+        # Calculate current plan cost if available (cached)
         current_cost = None
         if customer.current_plan_id:
-            current_plan = await self.plan_repo.get_by_id(customer.current_plan_id)
+            current_plan = await self.cached_plans.get_plan_by_id(customer.current_plan_id)
             if current_plan:
                 current_cost = self.cost_calculator.calculate_annual_cost(
                     customer.usage_data,

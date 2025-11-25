@@ -4,6 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import uuid4
 
+import sqlalchemy as sa
 from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -104,6 +105,7 @@ class CustomerUsage(Base):
 
     # Ensure unique usage per customer per month
     __table_args__ = (
+        sa.UniqueConstraint("customer_id", "usage_date", name="uq_customer_usage_date"),
         {"comment": "Stores 12 months of customer energy usage data"},
     )
 

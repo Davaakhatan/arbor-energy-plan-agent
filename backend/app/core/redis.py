@@ -95,3 +95,82 @@ class CacheService:
         if keys:
             return await self.client.delete(*keys)
         return 0
+
+    async def get_or_set(
+        self,
+        key: str,
+        factory,
+        ttl: int | None = None,
+    ):
+        """Get value from cache or compute and set it.
+
+        Args:
+            key: Cache key
+            factory: Async callable to compute value if not cached
+            ttl: Time to live in seconds
+        """
+        cached = await self.get(key)
+        if cached is not None:
+            return cached
+
+        value = await factory()
+        await self.set(key, value, ttl)
+        return value
+
+    async def increment(self, key: str, amount: int = 1) -> int:
+        """Increment a counter in cache."""
+        return await self.client.incrby(key, amount)
+
+    async def get_many(self, keys: list[str]) -> dict[str, Any]:
+        """Get multiple values from cache."""
+        if not keys:
+            return {}
+
+        values = await self.client.mget(keys)
+        result = {}
+        for key, value in zip(keys, values):
+            if value is not None:
+                try:
+                    result[key] = json.loads(value)
+                except json.JSONDecodeError:
+                    result[key] = value
+        return result
+
+    async def set_many(
+        self,
+        items: dict[str, Any],
+        ttl: int | None = None,
+    ) -> None:
+        """Set multiple values in cache."""
+        ttl = ttl or self.default_ttl
+        pipe = self.client.pipeline()
+        for key, value in items.items():
+            serialized = json.dumps(value) if not isinstance(value, str) else value
+            pipe.setex(key, ttl, serialized)
+        await pipe.execute()
+
+
+# Cache key prefixes
+class CacheKeys:
+    """Constants for cache key prefixes."""
+
+    PLANS = "plans"
+    PLANS_ALL = "plans:all"
+    RECOMMENDATIONS = "recommendations"
+    CUSTOMER = "customer"
+    USAGE_ANALYSIS = "usage_analysis"
+
+    @staticmethod
+    def plan(plan_id: str) -> str:
+        """Get cache key for a specific plan."""
+        return f"plans:{plan_id}"
+
+    @staticmethod
+    def recommendations(customer_id: str) -> str:
+        """Get cache key for customer recommendations."""
+        return f"recommendations:{customer_id}"
+
+    @staticmethod
+    def usage_analysis(customer_id: str) -> str:
+        """Get cache key for customer usage analysis."""
+        return f"usage_analysis:{customer_id}"

@@ -39,8 +39,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Initialize Redis
     try:
-        await init_redis()
+        redis_client = await init_redis()
         logger.info("Redis initialized")
+
+        # Warm plan cache on startup for faster first requests
+        try:
+            from app.core.database import get_async_session
+            from app.core.redis import CacheService
+            from app.services.cached_plan_service import CachedPlanService
+
+            async for session in get_async_session():
+                cache = CacheService(redis_client)
+                plan_service = CachedPlanService(session, cache)
+                plans_cached = await plan_service.warm_cache()
+                logger.info(f"Cache warmed with {plans_cached} plans")
+                break
+        except Exception as e:
+            logger.warning("Failed to warm cache", error=str(e))
     except Exception as e:
         logger.warning("Failed to initialize Redis", error=str(e))
         # Continue without Redis - graceful degradation
