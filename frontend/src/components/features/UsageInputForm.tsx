@@ -72,9 +72,9 @@ export function UsageInputForm({ onSubmit }: UsageInputFormProps) {
 
       if (result.ingestion_result.success) {
         // Convert customer usage data to the format we need
-        const uploadedUsage: CustomerUsage[] = result.customer.usage_data.map((u: { usage_date: string; kwh_usage: string }) => ({
+        const uploadedUsage: CustomerUsage[] = result.customer.usage_data.map((u: CustomerUsage) => ({
           usage_date: u.usage_date,
-          kwh_usage: parseFloat(u.kwh_usage),
+          kwh_usage: Number(u.kwh_usage),
         }));
 
         setUsageData(uploadedUsage);
