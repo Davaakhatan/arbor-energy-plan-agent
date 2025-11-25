@@ -3,6 +3,9 @@ import type {
   Customer,
   CustomerPreference,
   EnergyPlan,
+  Feedback,
+  FeedbackCreate,
+  FeedbackStats,
   RecommendationSet,
   UsageFormData,
 } from "@/types";
@@ -106,6 +109,40 @@ export const recommendationsApi = {
 export const healthApi = {
   check: async (): Promise<{ status: string; version: string }> => {
     const response = await api.get("/health");
+    return response.data;
+  },
+};
+
+// Ingestion API
+export const ingestionApi = {
+  uploadCsv: async (file: File): Promise<{ customer: Customer; ingestion_result: { success: boolean; records_processed: number; records_failed: number; errors: string[]; warnings: string[] } }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post("/ingest/csv", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+};
+
+// Feedback API
+export const feedbackApi = {
+  submit: async (data: FeedbackCreate): Promise<Feedback> => {
+    const response = await api.post<Feedback>("/feedback", data);
+    return response.data;
+  },
+
+  getByCustomer: async (customerId: string, limit = 10): Promise<Feedback[]> => {
+    const response = await api.get<Feedback[]>(`/feedback/customer/${customerId}`, {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  getStats: async (): Promise<FeedbackStats> => {
+    const response = await api.get<FeedbackStats>("/feedback/stats");
     return response.data;
   },
 };

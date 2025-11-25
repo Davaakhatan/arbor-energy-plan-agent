@@ -3,8 +3,10 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -38,12 +40,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.error("Failed to initialize database", error=str(e))
         raise
 
-    # Initialize Redis
+    # Initialize Redis with timeout for faster startup
+    import asyncio
     try:
-        redis_client = await init_redis()
+        redis_client = await asyncio.wait_for(init_redis(), timeout=10.0)
         logger.info("Redis initialized")
 
-        # Warm plan cache on startup for faster first requests
+        # Warm plan cache on startup for faster first requests (non-blocking)
         try:
             from app.core.database import get_async_session
             from app.core.redis import CacheService
@@ -57,6 +60,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 break
         except Exception as e:
             logger.warning("Failed to warm cache", error=str(e))
+    except asyncio.TimeoutError:
+        logger.warning("Redis initialization timed out after 10s, continuing without cache")
     except Exception as e:
         logger.warning("Failed to initialize Redis", error=str(e))
         # Continue without Redis - graceful degradation
@@ -104,6 +109,32 @@ def create_app() -> FastAPI:
 
     # Include API routes
     app.include_router(api_router, prefix=settings.api_v1_prefix)
+
+    # Global exception handler for database integrity errors
+    @app.exception_handler(IntegrityError)
+    async def integrity_error_handler(request: Request, exc: IntegrityError) -> JSONResponse:
+        """Handle database integrity errors gracefully."""
+        logger.error("Database integrity error", error=str(exc))
+        error_msg = str(exc.orig) if exc.orig else str(exc)
+        if "foreign key" in error_msg.lower():
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid reference: one or more referenced records do not exist"},
+            )
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "Database constraint violation"},
+        )
+
+    # Global exception handler for unhandled errors
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        """Handle unhandled exceptions gracefully."""
+        logger.error("Unhandled exception", error=str(exc), exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"},
+        )
 
     return app
 

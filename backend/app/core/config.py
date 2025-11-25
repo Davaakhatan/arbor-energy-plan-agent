@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import quote_plus
 
 from pydantic import PostgresDsn, RedisDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -40,38 +41,29 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         """Construct PostgreSQL connection URL."""
-        return str(
-            PostgresDsn.build(
-                scheme="postgresql+asyncpg",
-                username=self.postgres_user,
-                password=self.postgres_password,
-                host=self.postgres_host,
-                port=self.postgres_port,
-                path=self.postgres_db,
-            )
-        )
+        # URL-encode username and password for special characters
+        encoded_user = quote_plus(self.postgres_user)
+        encoded_password = quote_plus(self.postgres_password)
+        return f"postgresql+asyncpg://{encoded_user}:{encoded_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
 
     # Redis
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_password: str | None = None
     redis_db: int = 0
+    redis_ssl: bool = False  # Enable for AWS ElastiCache with encryption in transit
 
     @computed_field  # type: ignore[misc]
     @property
     def redis_url(self) -> str:
         """Construct Redis connection URL."""
+        # Use rediss:// for SSL/TLS connections (AWS ElastiCache)
+        scheme = "rediss" if self.redis_ssl else "redis"
         if self.redis_password:
-            return str(
-                RedisDsn.build(
-                    scheme="redis",
-                    password=self.redis_password,
-                    host=self.redis_host,
-                    port=self.redis_port,
-                    path=str(self.redis_db),
-                )
-            )
-        return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
+            # URL-encode password for special characters
+            encoded_password = quote_plus(self.redis_password)
+            return f"{scheme}://:{encoded_password}@{self.redis_host}:{self.redis_port}/{self.redis_db}"
+        return f"{scheme}://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
     # Security
     secret_key: str = "change-me-in-production"

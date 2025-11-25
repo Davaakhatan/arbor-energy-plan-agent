@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Upload, FileText } from "lucide-react";
-import { customerApi } from "@/lib/api";
+import { Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { customerApi, ingestionApi } from "@/lib/api";
 import type { CustomerUsage } from "@/types";
 
 interface UsageInputFormProps {
@@ -13,9 +13,13 @@ interface UsageInputFormProps {
 
 export function UsageInputForm({ onSubmit }: UsageInputFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadResult, setUploadResult] = useState<{ success: boolean; message: string } | null>(null);
   const [usageData, setUsageData] = useState<CustomerUsage[]>([]);
   const [externalId, setExternalId] = useState("");
+  const [uploadedCustomerId, setUploadedCustomerId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Generate sample 12-month usage data
   const generateSampleData = () => {
@@ -45,11 +49,65 @@ export function UsageInputForm({ onSubmit }: UsageInputFormProps) {
 
     setUsageData(data);
     setExternalId(`demo-${Date.now()}`);
+    setUploadedCustomerId(null);
+    setUploadResult(null);
+  };
+
+  // Handle CSV file upload
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".csv")) {
+      setError("Please upload a CSV file");
+      return;
+    }
+
+    setIsUploading(true);
+    setError(null);
+    setUploadResult(null);
+
+    try {
+      const result = await ingestionApi.uploadCsv(file);
+
+      if (result.ingestion_result.success) {
+        // Convert customer usage data to the format we need
+        const uploadedUsage: CustomerUsage[] = result.customer.usage_data.map((u: { usage_date: string; kwh_usage: string }) => ({
+          usage_date: u.usage_date,
+          kwh_usage: parseFloat(u.kwh_usage),
+        }));
+
+        setUsageData(uploadedUsage);
+        setUploadedCustomerId(result.customer.id);
+        setExternalId(result.customer.external_id);
+        setUploadResult({
+          success: true,
+          message: `Successfully uploaded ${result.ingestion_result.records_processed} months of data`,
+        });
+      } else {
+        setError(result.ingestion_result.errors.join(", ") || "Failed to process CSV file");
+      }
+    } catch (err) {
+      setError("Failed to upload CSV file. Please check the format and try again.");
+      console.error(err);
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   const handleSubmit = async () => {
     if (usageData.length === 0) {
       setError("Please add usage data or use sample data");
+      return;
+    }
+
+    // If customer was already created via CSV upload, use that ID
+    if (uploadedCustomerId) {
+      onSubmit(uploadedCustomerId);
       return;
     }
 
@@ -149,18 +207,49 @@ export function UsageInputForm({ onSubmit }: UsageInputFormProps) {
                 <Button
                   variant="secondary"
                   className="flex-1"
-                  disabled
                   type="button"
-                  aria-label="Upload CSV file (coming soon)"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  aria-label="Upload CSV file"
                 >
                   <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-                  Upload CSV
+                  {isUploading ? "Uploading..." : "Upload CSV"}
                 </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  aria-label="CSV file input"
+                />
               </div>
               <p id="sample-data-hint" className="sr-only">
                 Generates 12 months of sample usage data for demonstration
               </p>
+              <p className="text-xs text-gray-500 mt-2">
+                CSV format: date,kwh (e.g., 2024-01-01,1050)
+              </p>
             </fieldset>
+
+            {uploadResult && (
+              <div
+                className={`p-3 rounded-lg text-sm flex items-center gap-2 ${
+                  uploadResult.success
+                    ? "bg-green-50 border border-green-200 text-green-700"
+                    : "bg-red-50 border border-red-200 text-red-600"
+                }`}
+                role="status"
+                aria-live="polite"
+              >
+                {uploadResult.success ? (
+                  <CheckCircle className="w-4 h-4" aria-hidden="true" />
+                ) : (
+                  <AlertCircle className="w-4 h-4" aria-hidden="true" />
+                )}
+                {uploadResult.message}
+              </div>
+            )}
 
             {error && (
               <div

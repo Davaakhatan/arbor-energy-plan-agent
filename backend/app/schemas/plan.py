@@ -2,9 +2,10 @@
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.plan import RateType
 
@@ -25,12 +26,18 @@ class SupplierResponse(BaseModel):
 
     id: UUID
     name: str
-    rating: Decimal | None
-    website: str | None
-    customer_service_rating: Decimal | None
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    rating: Decimal | None = None
+    website: str | None = None
+    customer_service_rating: Decimal | None = None
+    is_active: bool = True
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    @field_validator("is_active", mode="before")
+    @classmethod
+    def default_is_active(cls, v: Any) -> bool:
+        """Default is_active to True if None."""
+        return True if v is None else v
 
 
 class EnergyPlanCreate(BaseModel):
@@ -62,20 +69,44 @@ class EnergyPlanResponse(BaseModel):
     id: UUID
     supplier_id: UUID
     name: str
-    description: str | None
+    description: str | None = None
     rate_type: str
     rate_per_kwh: Decimal
-    monthly_fee: Decimal
-    contract_length_months: int
-    early_termination_fee: Decimal
-    cancellation_fee: Decimal
-    renewable_percentage: int
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    monthly_fee: Decimal = Decimal("0.00")
+    contract_length_months: int = 12
+    early_termination_fee: Decimal = Decimal("0.00")
+    cancellation_fee: Decimal = Decimal("0.00")
+    renewable_percentage: int = 0
+    is_active: bool = True
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     # Include supplier info
     supplier: SupplierResponse | None = None
+
+    @field_validator("cancellation_fee", "monthly_fee", "early_termination_fee", mode="before")
+    @classmethod
+    def default_decimal_fields(cls, v: Any) -> Decimal:
+        """Default decimal fields to 0.00 if None."""
+        return Decimal("0.00") if v is None else v
+
+    @field_validator("contract_length_months", mode="before")
+    @classmethod
+    def default_contract_length(cls, v: Any) -> int:
+        """Default contract_length_months to 12 if None."""
+        return 12 if v is None else v
+
+    @field_validator("renewable_percentage", mode="before")
+    @classmethod
+    def default_renewable_percentage(cls, v: Any) -> int:
+        """Default renewable_percentage to 0 if None."""
+        return 0 if v is None else v
+
+    @field_validator("is_active", mode="before")
+    @classmethod
+    def default_is_active(cls, v: Any) -> bool:
+        """Default is_active to True if None."""
+        return True if v is None else v
 
 
 class EnergyPlanWithCost(EnergyPlanResponse):

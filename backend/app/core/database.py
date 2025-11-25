@@ -46,9 +46,36 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    """Initialize database tables."""
+    """Initialize database tables.
+
+    Creates tables that don't exist and silently skips those that do.
+    Uses Alembic migrations for production; this is for dev/initial setup.
+    """
+    from sqlalchemy import inspect
+
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        # Get existing tables
+        def get_existing_tables(sync_conn):
+            inspector = inspect(sync_conn)
+            return set(inspector.get_table_names())
+
+        existing = await conn.run_sync(get_existing_tables)
+
+        # Only create tables that don't exist
+        tables_to_create = [
+            table for table in Base.metadata.sorted_tables
+            if table.name not in existing
+        ]
+
+        if tables_to_create:
+            # Create only missing tables
+            await conn.run_sync(
+                lambda sync_conn: Base.metadata.create_all(
+                    sync_conn,
+                    tables=tables_to_create,
+                    checkfirst=True
+                )
+            )
 
 
 async def close_db() -> None:

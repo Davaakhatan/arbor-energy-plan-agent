@@ -12,8 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.redis import CacheService, get_redis
 from app.models.customer import Customer
-from app.models.plan import EnergyPlan
-from app.models.supplier import Supplier
+from app.models.plan import EnergyPlan, Supplier
 
 router = APIRouter()
 

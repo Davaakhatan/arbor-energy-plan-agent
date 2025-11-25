@@ -9,11 +9,17 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Copy application code
 COPY pyproject.toml ./
+COPY app ./app/
+
+# Create README.md if not present (required by pyproject.toml)
+RUN touch README.md
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -e ".[dev]"
 
-# Copy application code
+# Copy remaining files
 COPY . .
 
 # Create non-root user

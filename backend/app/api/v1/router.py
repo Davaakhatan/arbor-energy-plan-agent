@@ -2,7 +2,17 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, customers, health, ingestion, metrics, plans, preferences, recommendations
+from app.api.v1.endpoints import (
+    auth,
+    customers,
+    feedback,
+    health,
+    ingestion,
+    metrics,
+    plans,
+    preferences,
+    recommendations,
+)
 
 api_router = APIRouter()
 
@@ -60,4 +70,11 @@ api_router.include_router(
     metrics.router,
     prefix="/metrics",
     tags=["monitoring"],
+)
+
+# Feedback endpoints
+api_router.include_router(
+    feedback.router,
+    prefix="/feedback",
+    tags=["feedback"],
 )

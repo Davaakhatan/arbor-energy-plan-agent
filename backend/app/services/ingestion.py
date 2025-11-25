@@ -294,12 +294,12 @@ class DataIngestionService:
         avg_usage = sum(usage_values) / len(usage_values)
 
         for record in records:
-            if record.kwh_usage > avg_usage * 3:
+            if record.kwh_usage > avg_usage * Decimal("3"):
                 warnings.append(
                     f"Unusually high usage on {record.usage_date}: "
                     f"{record.kwh_usage} kWh (3x average)"
                 )
-            elif record.kwh_usage < avg_usage * 0.2 and record.kwh_usage > 0:
+            elif record.kwh_usage < avg_usage * Decimal("0.2") and record.kwh_usage > 0:
                 warnings.append(
                     f"Unusually low usage on {record.usage_date}: "
                     f"{record.kwh_usage} kWh (5x below average)"

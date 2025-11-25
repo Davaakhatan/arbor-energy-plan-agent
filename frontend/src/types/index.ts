@@ -92,6 +92,42 @@ export interface RecommendationSet {
   warnings: string[];
 }
 
+// Feedback types
+export interface Feedback {
+  id: string;
+  customer_id: string;
+  recommendation_id?: string;
+  plan_id?: string;
+  feedback_type: "recommendation_rating" | "plan_selected" | "general_feedback";
+  rating?: number;
+  was_helpful?: boolean;
+  switched_to_plan?: boolean;
+  comment?: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface FeedbackCreate {
+  customer_id: string;
+  recommendation_id?: string;
+  plan_id?: string;
+  feedback_type?: string;
+  rating?: number;
+  was_helpful?: boolean;
+  switched_to_plan?: boolean;
+  comment?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface FeedbackStats {
+  total_feedback_count: number;
+  average_rating?: number;
+  helpful_percentage?: number;
+  switch_rate?: number;
+  rating_distribution: Record<number, number>;
+  feedback_by_type: Record<string, number>;
+}
+
 // Form types
 export interface UsageFormData {
   external_id: string;
@@ -101,4 +137,4 @@ export interface UsageFormData {
   early_termination_fee?: number;
 }
 
-export interface PreferenceFormData extends CustomerPreference {}
+export type PreferenceFormData = CustomerPreference;

@@ -169,6 +169,7 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "POSTGRES_DB", value = var.db_name },
         { name = "REDIS_HOST", value = aws_elasticache_replication_group.main.primary_endpoint_address },
         { name = "REDIS_PORT", value = "6379" },
+        { name = "REDIS_SSL", value = "true" },
         { name = "CORS_ORIGINS", value = "[\"https://${var.domain_name}\"]" }
       ]
 
@@ -287,17 +288,15 @@ resource "aws_ecs_service" "backend" {
     container_port   = 8000
   }
 
-  deployment_configuration {
-    maximum_percent         = 200
-    minimum_healthy_percent = 100
-  }
+  deployment_maximum_percent         = 200
+  deployment_minimum_healthy_percent = 100
 
   deployment_circuit_breaker {
     enable   = true
     rollback = true
   }
 
-  depends_on = [aws_lb_listener.https]
+  depends_on = [aws_lb_listener.http]
 
   tags = {
     Name = "${local.name_prefix}-backend"
@@ -324,17 +323,15 @@ resource "aws_ecs_service" "frontend" {
     container_port   = 3000
   }
 
-  deployment_configuration {
-    maximum_percent         = 200
-    minimum_healthy_percent = 100
-  }
+  deployment_maximum_percent         = 200
+  deployment_minimum_healthy_percent = 100
 
   deployment_circuit_breaker {
     enable   = true
     rollback = true
   }
 
-  depends_on = [aws_lb_listener.https]
+  depends_on = [aws_lb_listener.http]
 
   tags = {
     Name = "${local.name_prefix}-frontend"

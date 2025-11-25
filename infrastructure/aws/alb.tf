@@ -65,49 +65,11 @@ resource "aws_lb_target_group" "frontend" {
   }
 }
 
-# ACM Certificate (assuming you have a hosted zone)
-resource "aws_acm_certificate" "main" {
-  domain_name               = var.domain_name
-  subject_alternative_names = ["*.${var.domain_name}"]
-  validation_method         = "DNS"
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags = {
-    Name = "${local.name_prefix}-cert"
-  }
-}
-
-# HTTP Listener (redirect to HTTPS)
+# HTTP Listener (main listener for staging without SSL)
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
-
-  default_action {
-    type = "redirect"
-
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
-  }
-
-  tags = {
-    Name = "${local.name_prefix}-http-listener"
-  }
-}
-
-# HTTPS Listener
-resource "aws_lb_listener" "https" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = aws_acm_certificate.main.arn
 
   default_action {
     type             = "forward"
@@ -115,13 +77,13 @@ resource "aws_lb_listener" "https" {
   }
 
   tags = {
-    Name = "${local.name_prefix}-https-listener"
+    Name = "${local.name_prefix}-http-listener"
   }
 }
 
-# Listener Rule for API
+# Listener Rule for API (on HTTP listener)
 resource "aws_lb_listener_rule" "api" {
-  listener_arn = aws_lb_listener.https.arn
+  listener_arn = aws_lb_listener.http.arn
   priority     = 100
 
   action {
@@ -139,3 +101,32 @@ resource "aws_lb_listener_rule" "api" {
     Name = "${local.name_prefix}-api-rule"
   }
 }
+
+# NOTE: For production with HTTPS, uncomment below and configure DNS validation
+#
+# resource "aws_acm_certificate" "main" {
+#   domain_name               = var.domain_name
+#   subject_alternative_names = ["*.${var.domain_name}"]
+#   validation_method         = "DNS"
+#
+#   lifecycle {
+#     create_before_destroy = true
+#   }
+#
+#   tags = {
+#     Name = "${local.name_prefix}-cert"
+#   }
+# }
+#
+# resource "aws_lb_listener" "https" {
+#   load_balancer_arn = aws_lb.main.arn
+#   port              = "443"
+#   protocol          = "HTTPS"
+#   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+#   certificate_arn   = aws_acm_certificate.main.arn
+#
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.frontend.arn
+#   }
+# }

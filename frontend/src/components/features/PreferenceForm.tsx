@@ -64,11 +64,26 @@ export function PreferenceForm({ customerId, onSubmit, onBack }: PreferenceFormP
     setError(null);
 
     try {
+      // Normalize weights to ensure they sum to exactly 1.0
+      const weightSum =
+        preferences.cost_savings_weight +
+        preferences.flexibility_weight +
+        preferences.renewable_weight +
+        preferences.supplier_rating_weight;
+
+      const normalizedPreferences: CustomerPreference = {
+        ...preferences,
+        cost_savings_weight: preferences.cost_savings_weight / weightSum,
+        flexibility_weight: preferences.flexibility_weight / weightSum,
+        renewable_weight: preferences.renewable_weight / weightSum,
+        supplier_rating_weight: preferences.supplier_rating_weight / weightSum,
+      };
+
       const recommendations = await recommendationsApi.generate(
         customerId,
-        preferences
+        normalizedPreferences
       );
-      onSubmit(preferences, recommendations);
+      onSubmit(normalizedPreferences, recommendations);
     } catch (err) {
       setError("Failed to generate recommendations. Please try again.");
       console.error(err);

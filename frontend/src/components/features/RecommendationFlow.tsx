@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { HelpCircle } from "lucide-react";
 import { UsageInputForm } from "./UsageInputForm";
 import { PreferenceForm } from "./PreferenceForm";
 import { RecommendationResults } from "./RecommendationResults";
+import { OnboardingTutorial, useOnboardingStatus } from "./OnboardingTutorial";
+import { Button } from "@/components/ui/Button";
 import type { CustomerPreference, RecommendationSet } from "@/types";
 
 type Step = "usage" | "preferences" | "results";
@@ -11,11 +14,22 @@ type Step = "usage" | "preferences" | "results";
 export function RecommendationFlow() {
   const [step, setStep] = useState<Step>("usage");
   const [customerId, setCustomerId] = useState<string | null>(null);
-  const [preferences, setPreferences] = useState<CustomerPreference | null>(
+  const [_preferences, setPreferences] = useState<CustomerPreference | null>(
     null
   );
   const [recommendations, setRecommendations] =
     useState<RecommendationSet | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const { shouldShowOnboarding } = useOnboardingStatus();
+
+  // Auto-show tutorial for first-time visitors
+  useEffect(() => {
+    if (shouldShowOnboarding) {
+      // Slight delay to let the page render first
+      const timer = setTimeout(() => setShowTutorial(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldShowOnboarding]);
 
   const handleUsageSubmit = (id: string) => {
     setCustomerId(id);
@@ -50,7 +64,26 @@ export function RecommendationFlow() {
         Energy Plan Recommendation Process
       </h2>
 
+      {/* Onboarding Tutorial Modal */}
+      <OnboardingTutorial
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+      />
+
       <div className="mx-auto max-w-3xl">
+        {/* Help button for tutorial */}
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTutorial(true)}
+            className="text-gray-600 hover:text-arbor-primary"
+          >
+            <HelpCircle className="w-4 h-4 mr-1" />
+            How It Works
+          </Button>
+        </div>
+
         {/* Progress indicator - responsive */}
         <nav aria-label="Progress" className="mb-6 sm:mb-8">
           {/* Mobile: Simple text indicator */}

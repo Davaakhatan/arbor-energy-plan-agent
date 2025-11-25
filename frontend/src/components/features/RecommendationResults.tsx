@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import {
   Card,
@@ -23,7 +24,11 @@ import {
   AlertTriangle,
   CheckCircle,
   RefreshCw,
+  MessageSquare,
 } from "lucide-react";
+import { FeedbackForm } from "./FeedbackForm";
+import { PlanDetailsModal } from "./PlanDetailsModal";
+import { PlanSelectionModal } from "./PlanSelectionModal";
 import type { Recommendation, RecommendationSet } from "@/types";
 
 interface RecommendationResultsProps {
@@ -84,7 +89,10 @@ export function RecommendationResults({
       <ul className="space-y-4" aria-label="Recommended plans">
         {plans.map((rec) => (
           <li key={rec.id}>
-            <RecommendationCard recommendation={rec} />
+            <RecommendationCard
+              recommendation={rec}
+              customerId={recommendations.customer_id}
+            />
           </li>
         ))}
       </ul>
@@ -100,7 +108,17 @@ export function RecommendationResults({
   );
 }
 
-function RecommendationCard({ recommendation }: { recommendation: Recommendation }) {
+function RecommendationCard({
+  recommendation,
+  customerId,
+}: {
+  recommendation: Recommendation;
+  customerId: string;
+}) {
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showSelection, setShowSelection] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
   const { rank, plan, explanation, risk_flags, confidence_level } = recommendation;
   const isTop = rank === 1;
 
@@ -222,15 +240,68 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
             confidence
           </span>
           <div className="flex gap-2 order-1 sm:order-2 justify-center sm:justify-end">
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowFeedback(!showFeedback)}
+              aria-expanded={showFeedback}
+            >
+              <MessageSquare className="w-4 h-4 mr-1" aria-hidden="true" />
+              Feedback
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 sm:flex-none"
+              onClick={() => setShowDetails(true)}
+            >
               View Details
             </Button>
-            <Button size="sm" className="flex-1 sm:flex-none">
-              Select Plan
+            <Button
+              size="sm"
+              className="flex-1 sm:flex-none"
+              onClick={() => setShowSelection(true)}
+              disabled={isSelected}
+            >
+              {isSelected ? (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-1" aria-hidden="true" />
+                  Selected
+                </>
+              ) : (
+                "Select Plan"
+              )}
             </Button>
           </div>
         </div>
       </CardFooter>
+
+      {/* Feedback form */}
+      {showFeedback && (
+        <div className="px-6 pb-6">
+          <FeedbackForm
+            customerId={customerId}
+            recommendation={recommendation}
+            onSubmitted={() => setShowFeedback(false)}
+          />
+        </div>
+      )}
+
+      {/* Plan details modal */}
+      <PlanDetailsModal
+        isOpen={showDetails}
+        onClose={() => setShowDetails(false)}
+        recommendation={recommendation}
+      />
+
+      {/* Plan selection modal */}
+      <PlanSelectionModal
+        isOpen={showSelection}
+        onClose={() => setShowSelection(false)}
+        recommendation={recommendation}
+        customerId={customerId}
+        onPlanSelected={() => setIsSelected(true)}
+      />
     </Card>
   );
 }

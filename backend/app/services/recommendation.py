@@ -286,24 +286,26 @@ class RecommendationService:
             )
 
         # Long contract risk
-        if plan.contract_length_months >= 24:
+        contract_months = plan.contract_length_months or 12
+        if contract_months >= 24:
             risks.append(
                 RiskFlag(
                     code="LONG_CONTRACT",
                     severity="low",
-                    message=f"This plan requires a {plan.contract_length_months}-month commitment.",
-                    details={"months": plan.contract_length_months},
+                    message=f"This plan requires a {contract_months}-month commitment.",
+                    details={"months": contract_months},
                 )
             )
 
         # High ETF risk
-        if plan.early_termination_fee >= Decimal("200.00"):
+        etf = plan.early_termination_fee or Decimal("0.00")
+        if etf >= Decimal("200.00"):
             risks.append(
                 RiskFlag(
                     code="HIGH_ETF",
                     severity="medium",
-                    message=f"Early termination fee of ${plan.early_termination_fee} applies.",
-                    details={"etf": str(plan.early_termination_fee)},
+                    message=f"Early termination fee of ${etf} applies.",
+                    details={"etf": str(etf)},
                 )
             )
 
