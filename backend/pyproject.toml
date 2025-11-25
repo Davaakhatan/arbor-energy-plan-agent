@@ -35,6 +35,10 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.8.0",
     "pre-commit>=3.6.0",
+    "locust>=2.20.0",
+    "bandit>=1.7.0",
+    "safety>=2.3.0",
+    "gunicorn>=21.0.0",
 ]
 
 [build-system]
