@@ -12,6 +12,7 @@ from app.core.database import close_db, init_db
 from app.core.logging import get_logger, setup_logging
 from app.core.redis import close_redis, init_redis
 from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.timing import TimingMiddleware
 
 # Initialize logging
 setup_logging()
@@ -89,6 +90,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Add timing middleware (first to measure total response time)
+    app.add_middleware(TimingMiddleware)
 
     # Add rate limiting middleware
     if settings.environment != "test":
