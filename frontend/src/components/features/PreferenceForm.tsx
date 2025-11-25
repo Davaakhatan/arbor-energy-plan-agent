@@ -81,142 +81,197 @@ export function PreferenceForm({ customerId, onSubmit, onBack }: PreferenceFormP
     <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="w-4 h-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            aria-label="Go back to usage data entry"
+          >
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           </Button>
           <div>
-            <CardTitle>Set Your Preferences</CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
+            <CardTitle id="preferences-title">Set Your Preferences</CardTitle>
+            <p className="text-sm text-gray-600 mt-1" id="preferences-desc">
               Adjust the sliders to reflect what matters most to you.
             </p>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6">
-          {/* Weight sliders */}
-          <div className="space-y-4">
-            <PreferenceSlider
-              label="Cost Savings"
-              description="Prioritize lower monthly bills"
-              value={preferences.cost_savings_weight}
-              onChange={(v) => updateWeight("cost_savings_weight", v)}
-            />
-            <PreferenceSlider
-              label="Flexibility"
-              description="Prefer shorter contracts"
-              value={preferences.flexibility_weight}
-              onChange={(v) => updateWeight("flexibility_weight", v)}
-            />
-            <PreferenceSlider
-              label="Renewable Energy"
-              description="Higher green energy percentage"
-              value={preferences.renewable_weight}
-              onChange={(v) => updateWeight("renewable_weight", v)}
-            />
-            <PreferenceSlider
-              label="Supplier Rating"
-              description="Better customer reviews"
-              value={preferences.supplier_rating_weight}
-              onChange={(v) => updateWeight("supplier_rating_weight", v)}
-            />
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          aria-labelledby="preferences-title"
+          aria-describedby="preferences-desc"
+        >
+          <div className="space-y-6">
+            {/* Weight sliders */}
+            <fieldset>
+              <legend className="text-sm font-medium text-gray-700 mb-4">
+                Priority Weights
+              </legend>
+              <div className="space-y-4" role="group" aria-label="Preference weight sliders">
+                <PreferenceSlider
+                  id="cost-savings"
+                  label="Cost Savings"
+                  description="Prioritize lower monthly bills"
+                  value={preferences.cost_savings_weight}
+                  onChange={(v) => updateWeight("cost_savings_weight", v)}
+                />
+                <PreferenceSlider
+                  id="flexibility"
+                  label="Flexibility"
+                  description="Prefer shorter contracts"
+                  value={preferences.flexibility_weight}
+                  onChange={(v) => updateWeight("flexibility_weight", v)}
+                />
+                <PreferenceSlider
+                  id="renewable"
+                  label="Renewable Energy"
+                  description="Higher green energy percentage"
+                  value={preferences.renewable_weight}
+                  onChange={(v) => updateWeight("renewable_weight", v)}
+                />
+                <PreferenceSlider
+                  id="rating"
+                  label="Supplier Rating"
+                  description="Better customer reviews"
+                  value={preferences.supplier_rating_weight}
+                  onChange={(v) => updateWeight("supplier_rating_weight", v)}
+                />
+              </div>
+            </fieldset>
+
+            {/* Additional constraints */}
+            <fieldset className="border-t pt-4 space-y-4">
+              <legend className="text-sm font-medium text-gray-700">
+                Additional Constraints
+              </legend>
+
+              <div>
+                <label
+                  htmlFor="min-renewable"
+                  className="flex items-center justify-between text-sm"
+                >
+                  <span>Minimum Renewable %</span>
+                  <span className="font-medium" aria-live="polite">
+                    {preferences.min_renewable_percentage}%
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  id="min-renewable"
+                  min="0"
+                  max="100"
+                  step="10"
+                  value={preferences.min_renewable_percentage}
+                  onChange={(e) =>
+                    setPreferences({
+                      ...preferences,
+                      min_renewable_percentage: Number(e.target.value),
+                    })
+                  }
+                  className="w-full mt-2"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={preferences.min_renewable_percentage}
+                  aria-valuetext={`${preferences.min_renewable_percentage} percent`}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="avoid-variable"
+                  checked={preferences.avoid_variable_rates}
+                  onChange={(e) =>
+                    setPreferences({
+                      ...preferences,
+                      avoid_variable_rates: e.target.checked,
+                    })
+                  }
+                  className="rounded border-gray-300 focus:ring-arbor-primary"
+                />
+                <label htmlFor="avoid-variable" className="text-sm">
+                  Avoid variable rate plans
+                </label>
+              </div>
+            </fieldset>
+
+            {error && (
+              <div
+                className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600"
+                role="alert"
+                aria-live="assertive"
+              >
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              isLoading={isLoading}
+              loadingText="Generating recommendations..."
+              className="w-full"
+              size="lg"
+            >
+              Get My Recommendations
+            </Button>
           </div>
-
-          {/* Additional constraints */}
-          <div className="border-t pt-4 space-y-4">
-            <h4 className="text-sm font-medium text-gray-700">
-              Additional Constraints
-            </h4>
-
-            <div>
-              <label className="flex items-center justify-between text-sm">
-                <span>Minimum Renewable %</span>
-                <span className="font-medium">
-                  {preferences.min_renewable_percentage}%
-                </span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="10"
-                value={preferences.min_renewable_percentage}
-                onChange={(e) =>
-                  setPreferences({
-                    ...preferences,
-                    min_renewable_percentage: Number(e.target.value),
-                  })
-                }
-                className="w-full mt-2"
-              />
-            </div>
-
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={preferences.avoid_variable_rates}
-                onChange={(e) =>
-                  setPreferences({
-                    ...preferences,
-                    avoid_variable_rates: e.target.checked,
-                  })
-                }
-                className="rounded border-gray-300"
-              />
-              <span>Avoid variable rate plans</span>
-            </label>
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-              {error}
-            </div>
-          )}
-
-          <Button
-            onClick={handleSubmit}
-            isLoading={isLoading}
-            className="w-full"
-            size="lg"
-          >
-            Get My Recommendations
-          </Button>
-        </div>
+        </form>
       </CardContent>
     </Card>
   );
 }
 
 function PreferenceSlider({
+  id,
   label,
   description,
   value,
   onChange,
 }: {
+  id: string;
   label: string;
   description: string;
   value: number;
   onChange: (value: number) => void;
 }) {
+  const percentage = Math.round(value * 100);
+  const sliderId = `slider-${id}`;
+  const descId = `desc-${id}`;
+
   return (
     <div>
       <div className="flex items-center justify-between text-sm mb-1">
         <div>
-          <span className="font-medium">{label}</span>
-          <span className="text-gray-500 ml-2">{description}</span>
+          <label htmlFor={sliderId} className="font-medium">
+            {label}
+          </label>
+          <span className="text-gray-500 ml-2" id={descId}>
+            {description}
+          </span>
         </div>
-        <span className="font-medium text-arbor-primary">
-          {Math.round(value * 100)}%
+        <span className="font-medium text-arbor-primary" aria-live="polite">
+          {percentage}%
         </span>
       </div>
       <input
         type="range"
+        id={sliderId}
         min="0"
         max="0.8"
         step="0.05"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full"
+        aria-describedby={descId}
+        aria-valuemin={0}
+        aria-valuemax={80}
+        aria-valuenow={percentage}
+        aria-valuetext={`${percentage} percent`}
       />
     </div>
   );
