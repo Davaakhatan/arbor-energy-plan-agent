@@ -13,6 +13,18 @@ class SwitchRecommendation(str, Enum):
     WAIT_FOR_CONTRACT_END = "wait_for_contract_end"
     NOT_BENEFICIAL = "not_beneficial"
     SWITCH_SOON = "switch_soon"  # Within 30 days recommended
+    MARGINAL_BENEFIT = "marginal_benefit"  # Savings exist but minimal
+
+
+class NotBeneficialReason(str, Enum):
+    """Reasons why switching may not be beneficial."""
+
+    NEW_PLAN_MORE_EXPENSIVE = "new_plan_more_expensive"
+    SAVINGS_TOO_SMALL = "savings_too_small"
+    BREAK_EVEN_TOO_LONG = "break_even_too_long"
+    ETF_EXCEEDS_ANNUAL_SAVINGS = "etf_exceeds_annual_savings"
+    CONTRACT_TOO_SHORT = "contract_too_short"
+    RATE_VOLATILITY_RISK = "rate_volatility_risk"
 
 
 @dataclass
@@ -36,13 +48,27 @@ class ContractAnalysis:
     immediate_switch_savings: Decimal  # Savings if switch now (including ETF)
     wait_to_switch_savings: Decimal  # Savings if wait for contract end
 
+    # Not beneficial analysis
+    not_beneficial_reason: NotBeneficialReason | None = None
+    confidence_score: float = 1.0  # 0-1 confidence in recommendation
+
     # Explanation
-    explanation: str
-    details: dict
+    explanation: str = ""
+    details: dict = None
+
+    def __post_init__(self):
+        if self.details is None:
+            self.details = {}
 
 
 class ContractAnalyzer:
     """Analyzes contract timing for optimal switching decisions."""
+
+    # Thresholds for determining benefit worthiness
+    MIN_ANNUAL_SAVINGS_THRESHOLD = Decimal("50")  # Minimum $50/year to be worthwhile
+    MIN_MONTHLY_SAVINGS_THRESHOLD = Decimal("5")  # Minimum $5/month
+    MAX_BREAK_EVEN_MONTHS = 18  # Maximum months to recover ETF
+    MARGINAL_SAVINGS_THRESHOLD = Decimal("100")  # Below this is marginal benefit
 
     def analyze_switch_timing(
         self,
@@ -50,6 +76,7 @@ class ContractAnalyzer:
         early_termination_fee: Decimal,
         current_plan_monthly_cost: Decimal,
         new_plan_monthly_cost: Decimal,
+        new_plan_contract_months: int = 12,
         today: date | None = None,
     ) -> ContractAnalysis:
         """Analyze the optimal timing for switching plans.
@@ -59,6 +86,7 @@ class ContractAnalyzer:
             early_termination_fee: Fee for early termination
             current_plan_monthly_cost: Current plan's monthly cost
             new_plan_monthly_cost: New plan's monthly cost
+            new_plan_contract_months: Length of new plan contract in months
             today: Optional override for today's date (for testing)
         """
         if today is None:
@@ -74,28 +102,36 @@ class ContractAnalyzer:
 
         # Calculate monthly savings
         monthly_savings = current_plan_monthly_cost - new_plan_monthly_cost
+        annual_savings = monthly_savings * 12
 
-        # If new plan is more expensive, not beneficial
-        if monthly_savings <= 0:
+        # Check for various not-beneficial scenarios
+        not_beneficial_result = self._check_not_beneficial(
+            monthly_savings=monthly_savings,
+            annual_savings=annual_savings,
+            early_termination_fee=early_termination_fee,
+            has_active_contract=has_active_contract,
+            days_until_end=days_until_end,
+            new_plan_contract_months=new_plan_contract_months,
+            current_contract_end=current_contract_end,
+        )
+
+        if not_beneficial_result:
             return ContractAnalysis(
                 has_active_contract=has_active_contract,
                 contract_end_date=current_contract_end,
                 days_until_contract_end=days_until_end,
                 early_termination_fee=early_termination_fee,
-                switch_recommendation=SwitchRecommendation.NOT_BENEFICIAL,
-                optimal_switch_date=None,
-                break_even_months=None,
+                switch_recommendation=not_beneficial_result["recommendation"],
+                optimal_switch_date=not_beneficial_result.get("optimal_date"),
+                break_even_months=not_beneficial_result.get("break_even_months"),
                 remaining_contract_cost=Decimal("0"),
                 new_plan_cost_same_period=Decimal("0"),
                 immediate_switch_savings=monthly_savings,
-                wait_to_switch_savings=Decimal("0"),
-                explanation=(
-                    "The new plan would not save you money compared to your current plan."
-                ),
-                details={
-                    "monthly_difference": str(monthly_savings),
-                    "reason": "new_plan_more_expensive",
-                },
+                wait_to_switch_savings=annual_savings if annual_savings > 0 else Decimal("0"),
+                not_beneficial_reason=not_beneficial_result["reason"],
+                confidence_score=not_beneficial_result["confidence"],
+                explanation=not_beneficial_result["explanation"],
+                details=not_beneficial_result["details"],
             )
 
         # Calculate break-even point (months to recover ETF)
@@ -233,3 +269,187 @@ class ContractAnalyzer:
                 windows["optimal_notice_date"] = today
 
         return windows
+
+    def _check_not_beneficial(
+        self,
+        monthly_savings: Decimal,
+        annual_savings: Decimal,
+        early_termination_fee: Decimal,
+        has_active_contract: bool,
+        days_until_end: int | None,
+        new_plan_contract_months: int,
+        current_contract_end: date | None,
+    ) -> dict | None:
+        """Check if switching is not beneficial and return details.
+
+        Returns None if switching IS beneficial, otherwise returns a dict with:
+        - recommendation: SwitchRecommendation
+        - reason: NotBeneficialReason
+        - confidence: float (0-1)
+        - explanation: str
+        - details: dict
+        """
+        # Scenario 1: New plan is more expensive
+        if monthly_savings <= 0:
+            return {
+                "recommendation": SwitchRecommendation.NOT_BENEFICIAL,
+                "reason": NotBeneficialReason.NEW_PLAN_MORE_EXPENSIVE,
+                "confidence": 1.0,
+                "explanation": (
+                    f"The new plan costs ${abs(monthly_savings):.2f} more per month. "
+                    "You would lose money by switching."
+                ),
+                "details": {
+                    "monthly_difference": str(monthly_savings),
+                    "annual_loss": str(monthly_savings * 12),
+                },
+            }
+
+        # Scenario 2: Savings are too small to be worth the hassle
+        if annual_savings < self.MIN_ANNUAL_SAVINGS_THRESHOLD:
+            return {
+                "recommendation": SwitchRecommendation.NOT_BENEFICIAL,
+                "reason": NotBeneficialReason.SAVINGS_TOO_SMALL,
+                "confidence": 0.9,
+                "explanation": (
+                    f"Annual savings of ${annual_savings:.2f} may not justify the effort "
+                    f"of switching. Minimum recommended savings: ${self.MIN_ANNUAL_SAVINGS_THRESHOLD}."
+                ),
+                "details": {
+                    "annual_savings": str(annual_savings),
+                    "threshold": str(self.MIN_ANNUAL_SAVINGS_THRESHOLD),
+                    "monthly_savings": str(monthly_savings),
+                },
+            }
+
+        # Scenario 3: ETF exceeds annual savings (takes over a year to break even)
+        if early_termination_fee > 0 and early_termination_fee > annual_savings:
+            break_even_months = int(
+                (early_termination_fee / monthly_savings).to_integral_value()
+            ) + 1
+
+            if break_even_months > self.MAX_BREAK_EVEN_MONTHS:
+                return {
+                    "recommendation": SwitchRecommendation.NOT_BENEFICIAL,
+                    "reason": NotBeneficialReason.ETF_EXCEEDS_ANNUAL_SAVINGS,
+                    "confidence": 0.95,
+                    "explanation": (
+                        f"The ${early_termination_fee} early termination fee would take "
+                        f"{break_even_months} months to recover through savings. "
+                        f"This exceeds the recommended maximum of {self.MAX_BREAK_EVEN_MONTHS} months."
+                    ),
+                    "details": {
+                        "etf": str(early_termination_fee),
+                        "annual_savings": str(annual_savings),
+                        "break_even_months": break_even_months,
+                        "max_recommended": self.MAX_BREAK_EVEN_MONTHS,
+                    },
+                    "break_even_months": break_even_months,
+                }
+
+        # Scenario 4: Break-even period exceeds new contract length
+        if early_termination_fee > 0 and monthly_savings > 0:
+            break_even_months = int(
+                (early_termination_fee / monthly_savings).to_integral_value()
+            ) + 1
+
+            if break_even_months > new_plan_contract_months:
+                return {
+                    "recommendation": SwitchRecommendation.NOT_BENEFICIAL,
+                    "reason": NotBeneficialReason.BREAK_EVEN_TOO_LONG,
+                    "confidence": 0.85,
+                    "explanation": (
+                        f"It would take {break_even_months} months to recover the "
+                        f"${early_termination_fee} ETF, but the new plan contract is "
+                        f"only {new_plan_contract_months} months. You wouldn't benefit "
+                        "within this contract period."
+                    ),
+                    "details": {
+                        "break_even_months": break_even_months,
+                        "new_contract_months": new_plan_contract_months,
+                        "etf": str(early_termination_fee),
+                    },
+                    "break_even_months": break_even_months,
+                }
+
+        # Scenario 5: Current contract ending very soon - marginal benefit
+        if has_active_contract and days_until_end and days_until_end <= 14:
+            # Contract ends in 2 weeks, might not be worth ETF hassle
+            if early_termination_fee > 0:
+                two_week_savings = monthly_savings / 2
+                if early_termination_fee > two_week_savings * 3:  # ETF > 6 weeks savings
+                    return {
+                        "recommendation": SwitchRecommendation.MARGINAL_BENEFIT,
+                        "reason": NotBeneficialReason.CONTRACT_TOO_SHORT,
+                        "confidence": 0.7,
+                        "explanation": (
+                            f"Your contract ends in only {days_until_end} days. "
+                            f"Paying the ${early_termination_fee} ETF for such a short period "
+                            "provides minimal benefit. Consider waiting."
+                        ),
+                        "details": {
+                            "days_remaining": days_until_end,
+                            "etf": str(early_termination_fee),
+                            "potential_savings_remaining": str(two_week_savings),
+                        },
+                        "optimal_date": current_contract_end,
+                    }
+
+        # Scenario 6: Marginal savings - worth it but barely
+        if annual_savings < self.MARGINAL_SAVINGS_THRESHOLD:
+            return {
+                "recommendation": SwitchRecommendation.MARGINAL_BENEFIT,
+                "reason": NotBeneficialReason.SAVINGS_TOO_SMALL,
+                "confidence": 0.6,
+                "explanation": (
+                    f"Annual savings of ${annual_savings:.2f} are relatively modest. "
+                    "Switching is beneficial but the impact is limited. "
+                    "Consider if other factors (renewable energy, customer service) "
+                    "are important to you."
+                ),
+                "details": {
+                    "annual_savings": str(annual_savings),
+                    "marginal_threshold": str(self.MARGINAL_SAVINGS_THRESHOLD),
+                },
+            }
+
+        # Switching appears beneficial
+        return None
+
+    def calculate_total_cost_of_switching(
+        self,
+        early_termination_fee: Decimal,
+        months_remaining_current: int,
+        current_monthly_cost: Decimal,
+        new_monthly_cost: Decimal,
+        new_contract_months: int,
+    ) -> dict:
+        """Calculate comprehensive cost analysis for switching.
+
+        Returns a detailed breakdown of costs for switching now vs waiting.
+        """
+        # Cost if staying on current plan until end + new plan after
+        stay_cost = current_monthly_cost * months_remaining_current
+        then_new_cost = new_monthly_cost * new_contract_months
+        total_stay_then_switch = stay_cost + then_new_cost
+
+        # Cost if switching now (with ETF)
+        switch_now_cost = (
+            early_termination_fee +
+            new_monthly_cost * (months_remaining_current + new_contract_months)
+        )
+
+        # Which is better?
+        savings_switching_now = total_stay_then_switch - switch_now_cost
+
+        return {
+            "stay_on_current_cost": stay_cost,
+            "new_plan_cost_after": then_new_cost,
+            "total_stay_then_switch": total_stay_then_switch,
+            "switch_now_total_cost": switch_now_cost,
+            "etf_included": early_termination_fee,
+            "savings_if_switch_now": savings_switching_now,
+            "recommendation": (
+                "switch_now" if savings_switching_now > 0 else "wait"
+            ),
+        }

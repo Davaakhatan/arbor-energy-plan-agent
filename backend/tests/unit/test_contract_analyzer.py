@@ -7,6 +7,7 @@ import pytest
 
 from app.services.contract_analyzer import (
     ContractAnalyzer,
+    NotBeneficialReason,
     SwitchRecommendation,
 )
 
@@ -214,3 +215,181 @@ class TestContractAnalyzer:
         assert "monthly_savings" in analysis.details
         assert "annual_savings" in analysis.details
         assert len(analysis.explanation) > 0
+
+
+class TestNotBeneficialDetection:
+    """Tests for enhanced not-beneficial detection."""
+
+    @pytest.fixture
+    def analyzer(self) -> ContractAnalyzer:
+        """Create analyzer instance."""
+        return ContractAnalyzer()
+
+    @pytest.fixture
+    def today(self) -> date:
+        """Fixed date for testing."""
+        return date(2024, 6, 15)
+
+    def test_savings_too_small(
+        self, analyzer: ContractAnalyzer, today: date
+    ) -> None:
+        """Test detection when savings are too small to be worthwhile."""
+        analysis = analyzer.analyze_switch_timing(
+            current_contract_end=None,
+            early_termination_fee=Decimal("0"),
+            current_plan_monthly_cost=Decimal("100"),
+            new_plan_monthly_cost=Decimal("97"),  # Only $3/month savings = $36/year
+            today=today,
+        )
+
+        assert analysis.switch_recommendation == SwitchRecommendation.NOT_BENEFICIAL
+        assert analysis.not_beneficial_reason == NotBeneficialReason.SAVINGS_TOO_SMALL
+        assert analysis.confidence_score == 0.9
+
+    def test_etf_exceeds_annual_savings(
+        self, analyzer: ContractAnalyzer, today: date
+    ) -> None:
+        """Test detection when ETF recovery takes too long."""
+        contract_end = today + timedelta(days=365)
+
+        analysis = analyzer.analyze_switch_timing(
+            current_contract_end=contract_end,
+            early_termination_fee=Decimal("500"),  # High ETF
+            current_plan_monthly_cost=Decimal("100"),
+            new_plan_monthly_cost=Decimal("80"),  # $20/month = $240/year
+            today=today,
+        )
+
+        # $500 ETF / $20 monthly = 25 months to break even (>18 max)
+        assert analysis.switch_recommendation == SwitchRecommendation.NOT_BENEFICIAL
+        assert analysis.not_beneficial_reason == NotBeneficialReason.ETF_EXCEEDS_ANNUAL_SAVINGS
+        assert analysis.break_even_months == 26
+
+    def test_break_even_exceeds_contract_length(
+        self, analyzer: ContractAnalyzer, today: date
+    ) -> None:
+        """Test detection when break-even exceeds new contract length."""
+        contract_end = today + timedelta(days=365)
+
+        analysis = analyzer.analyze_switch_timing(
+            current_contract_end=contract_end,
+            early_termination_fee=Decimal("200"),
+            current_plan_monthly_cost=Decimal("100"),
+            new_plan_monthly_cost=Decimal("80"),  # $20/month
+            new_plan_contract_months=6,  # Short new contract
+            today=today,
+        )
+
+        # $200 ETF / $20 = 10 months, but new contract only 6 months
+        assert analysis.switch_recommendation == SwitchRecommendation.NOT_BENEFICIAL
+        assert analysis.not_beneficial_reason == NotBeneficialReason.BREAK_EVEN_TOO_LONG
+
+    def test_contract_too_short_for_etf(
+        self, analyzer: ContractAnalyzer, today: date
+    ) -> None:
+        """Test detection when contract ending soon makes ETF not worth it."""
+        contract_end = today + timedelta(days=10)  # Ends in 10 days
+
+        analysis = analyzer.analyze_switch_timing(
+            current_contract_end=contract_end,
+            early_termination_fee=Decimal("100"),
+            current_plan_monthly_cost=Decimal("150"),
+            new_plan_monthly_cost=Decimal("100"),  # $50/month savings
+            today=today,
+        )
+
+        # Contract ends in 10 days, ETF $100, only ~$17 in potential savings
+        assert analysis.switch_recommendation == SwitchRecommendation.MARGINAL_BENEFIT
+        assert analysis.not_beneficial_reason == NotBeneficialReason.CONTRACT_TOO_SHORT
+        assert analysis.optimal_switch_date == contract_end
+
+    def test_marginal_benefit_threshold(
+        self, analyzer: ContractAnalyzer, today: date
+    ) -> None:
+        """Test marginal benefit detection for modest savings."""
+        analysis = analyzer.analyze_switch_timing(
+            current_contract_end=None,
+            early_termination_fee=Decimal("0"),
+            current_plan_monthly_cost=Decimal("100"),
+            new_plan_monthly_cost=Decimal("92"),  # $8/month = $96/year
+            today=today,
+        )
+
+        # Below $100/year threshold but above $50 minimum
+        assert analysis.switch_recommendation == SwitchRecommendation.MARGINAL_BENEFIT
+        assert analysis.not_beneficial_reason == NotBeneficialReason.SAVINGS_TOO_SMALL
+        assert analysis.confidence_score == 0.6
+
+    def test_beneficial_switch_no_flags(
+        self, analyzer: ContractAnalyzer, today: date
+    ) -> None:
+        """Test that genuinely beneficial switches have no not-beneficial reason."""
+        analysis = analyzer.analyze_switch_timing(
+            current_contract_end=None,
+            early_termination_fee=Decimal("0"),
+            current_plan_monthly_cost=Decimal("150"),
+            new_plan_monthly_cost=Decimal("100"),  # $50/month = $600/year
+            today=today,
+        )
+
+        assert analysis.switch_recommendation == SwitchRecommendation.SWITCH_NOW
+        assert analysis.not_beneficial_reason is None
+        assert analysis.confidence_score == 1.0
+
+
+class TestCostCalculation:
+    """Tests for total cost calculation method."""
+
+    @pytest.fixture
+    def analyzer(self) -> ContractAnalyzer:
+        """Create analyzer instance."""
+        return ContractAnalyzer()
+
+    def test_calculate_switching_costs(
+        self, analyzer: ContractAnalyzer
+    ) -> None:
+        """Test comprehensive cost calculation."""
+        result = analyzer.calculate_total_cost_of_switching(
+            early_termination_fee=Decimal("150"),
+            months_remaining_current=6,
+            current_monthly_cost=Decimal("100"),
+            new_monthly_cost=Decimal("80"),
+            new_contract_months=12,
+        )
+
+        # Stay cost: $100 * 6 = $600
+        assert result["stay_on_current_cost"] == Decimal("600")
+
+        # New plan after: $80 * 12 = $960
+        assert result["new_plan_cost_after"] == Decimal("960")
+
+        # Total stay then switch: $600 + $960 = $1560
+        assert result["total_stay_then_switch"] == Decimal("1560")
+
+        # Switch now: $150 + $80 * 18 = $150 + $1440 = $1590
+        assert result["switch_now_total_cost"] == Decimal("1590")
+
+        # Savings: $1560 - $1590 = -$30 (waiting is better)
+        assert result["savings_if_switch_now"] == Decimal("-30")
+        assert result["recommendation"] == "wait"
+
+    def test_calculate_switching_costs_switch_now_better(
+        self, analyzer: ContractAnalyzer
+    ) -> None:
+        """Test when switching now is better."""
+        result = analyzer.calculate_total_cost_of_switching(
+            early_termination_fee=Decimal("50"),  # Low ETF
+            months_remaining_current=12,  # Long time remaining
+            current_monthly_cost=Decimal("150"),  # High current cost
+            new_monthly_cost=Decimal("80"),
+            new_contract_months=12,
+        )
+
+        # Stay cost: $150 * 12 = $1800
+        # New plan after: $80 * 12 = $960
+        # Total stay then switch: $2760
+        # Switch now: $50 + $80 * 24 = $1970
+        # Savings: $2760 - $1970 = $790
+
+        assert result["savings_if_switch_now"] == Decimal("790")
+        assert result["recommendation"] == "switch_now"
