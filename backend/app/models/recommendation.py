@@ -5,10 +5,10 @@ from decimal import Decimal
 from uuid import uuid4
 
 from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.core.database import Base, JSONType
 
 
 class Recommendation(Base):
@@ -81,14 +81,14 @@ class Recommendation(Base):
         comment="Plain language explanation of recommendation",
     )
     explanation_details: Mapped[dict] = mapped_column(
-        JSONB,
+        JSONType,
         default=dict,
         comment="Structured explanation data",
     )
 
     # Risk flags
     risk_flags: Mapped[list] = mapped_column(
-        JSONB,
+        JSONType,
         default=list,
         comment="List of risk warnings",
     )

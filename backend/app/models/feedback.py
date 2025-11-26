@@ -5,10 +5,10 @@ from enum import Enum
 from uuid import uuid4
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.core.database import Base, JSONType
 
 
 class FeedbackType(str, Enum):
@@ -82,7 +82,7 @@ class Feedback(Base):
 
     # Additional data
     extra_data: Mapped[dict] = mapped_column(
-        JSONB,
+        JSONType,
         default=dict,
         comment="Additional feedback data",
     )

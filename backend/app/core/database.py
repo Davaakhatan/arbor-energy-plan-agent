@@ -1,11 +1,45 @@
 """Database connection and session management."""
 
+import json
 from collections.abc import AsyncGenerator
+from typing import Any
 
+from sqlalchemy import JSON, Text, TypeDecorator
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
+
+
+class JSONType(TypeDecorator):
+    """Cross-database JSON type that uses JSONB on PostgreSQL and JSON on SQLite."""
+
+    impl = Text
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Any) -> Any:
+        """Load appropriate type based on database dialect."""
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(JSONB())
+        return dialect.type_descriptor(JSON())
+
+    def process_bind_param(self, value: Any, dialect: Any) -> Any:
+        """Convert Python object to JSON string for SQLite."""
+        if value is None:
+            return value
+        if dialect.name == "sqlite":
+            return json.dumps(value)
+        return value
+
+    def process_result_value(self, value: Any, dialect: Any) -> Any:
+        """Convert JSON string back to Python object for SQLite."""
+        if value is None:
+            return value
+        if dialect.name == "sqlite" and isinstance(value, str):
+            return json.loads(value)
+        return value
+
 
 # Create async engine
 engine = create_async_engine(
