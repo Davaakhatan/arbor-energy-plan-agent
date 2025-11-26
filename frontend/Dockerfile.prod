@@ -31,6 +31,9 @@ COPY . .
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
+# Ensure public folder exists
+RUN mkdir -p public
+
 # Build the application
 RUN pnpm build
 
