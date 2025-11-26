@@ -2,11 +2,12 @@
 
 from datetime import date
 from decimal import Decimal
+from types import SimpleNamespace
+from typing import Any
 from uuid import uuid4
 
 import pytest
 
-from app.models.customer import CustomerUsage
 from app.services.usage_analyzer import (
     SeasonalPattern,
     UsageAnalyzer,
@@ -23,7 +24,7 @@ class TestUsageAnalyzer:
         return UsageAnalyzer()
 
     @pytest.fixture
-    def summer_peak_data(self) -> list[CustomerUsage]:
+    def summer_peak_data(self) -> list[Any]:
         """Create data with summer peak pattern (AC usage)."""
         customer_id = uuid4()
         data = []
@@ -45,7 +46,7 @@ class TestUsageAnalyzer:
         }
 
         for month, kwh in monthly_kwh.items():
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -55,7 +56,7 @@ class TestUsageAnalyzer:
         return data
 
     @pytest.fixture
-    def winter_peak_data(self) -> list[CustomerUsage]:
+    def winter_peak_data(self) -> list[Any]:
         """Create data with winter peak pattern (heating)."""
         customer_id = uuid4()
         data = []
@@ -77,7 +78,7 @@ class TestUsageAnalyzer:
         }
 
         for month, kwh in monthly_kwh.items():
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -87,13 +88,13 @@ class TestUsageAnalyzer:
         return data
 
     @pytest.fixture
-    def flat_usage_data(self) -> list[CustomerUsage]:
+    def flat_usage_data(self) -> list[Any]:
         """Create data with flat/consistent usage pattern."""
         customer_id = uuid4()
         data = []
 
         for month in range(1, 13):
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -103,14 +104,14 @@ class TestUsageAnalyzer:
         return data
 
     @pytest.fixture
-    def increasing_trend_data(self) -> list[CustomerUsage]:
+    def increasing_trend_data(self) -> list[Any]:
         """Create data with increasing usage trend."""
         customer_id = uuid4()
         data = []
 
         base_kwh = 800
         for month in range(1, 13):
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -121,7 +122,7 @@ class TestUsageAnalyzer:
         return data
 
     def test_analyze_summer_peak(
-        self, analyzer: UsageAnalyzer, summer_peak_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, summer_peak_data: list[Any]
     ) -> None:
         """Test detection of summer peak pattern."""
         analysis = analyzer.analyze(summer_peak_data)
@@ -136,7 +137,7 @@ class TestUsageAnalyzer:
         assert analysis.months_of_data == 12
 
     def test_analyze_winter_peak(
-        self, analyzer: UsageAnalyzer, winter_peak_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, winter_peak_data: list[Any]
     ) -> None:
         """Test detection of winter peak pattern."""
         analysis = analyzer.analyze(winter_peak_data)
@@ -150,7 +151,7 @@ class TestUsageAnalyzer:
         assert analysis.seasonal_variation_percent > Decimal("0")
 
     def test_analyze_flat_pattern(
-        self, analyzer: UsageAnalyzer, flat_usage_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, flat_usage_data: list[Any]
     ) -> None:
         """Test detection of flat usage pattern."""
         analysis = analyzer.analyze(flat_usage_data)
@@ -159,7 +160,7 @@ class TestUsageAnalyzer:
         assert analysis.standard_deviation < Decimal("50")  # Low variance
 
     def test_analyze_increasing_trend(
-        self, analyzer: UsageAnalyzer, increasing_trend_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, increasing_trend_data: list[Any]
     ) -> None:
         """Test detection of increasing usage trend."""
         analysis = analyzer.analyze(increasing_trend_data)
@@ -168,7 +169,7 @@ class TestUsageAnalyzer:
         assert analysis.trend_percent_change > Decimal("0")
 
     def test_consumption_tier_high(
-        self, analyzer: UsageAnalyzer, summer_peak_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, summer_peak_data: list[Any]
     ) -> None:
         """Test high consumption tier detection."""
         analysis = analyzer.analyze(summer_peak_data)
@@ -184,7 +185,7 @@ class TestUsageAnalyzer:
 
         # Low usage household
         for month in range(1, 13):
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -197,7 +198,7 @@ class TestUsageAnalyzer:
         assert analysis.consumption_tier == "low"
 
     def test_data_quality_full_year(
-        self, analyzer: UsageAnalyzer, flat_usage_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, flat_usage_data: list[Any]
     ) -> None:
         """Test data quality score with full year of data."""
         analysis = analyzer.analyze(flat_usage_data)
@@ -212,7 +213,7 @@ class TestUsageAnalyzer:
 
         # Only 6 months of data
         for month in range(1, 7):
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -231,7 +232,7 @@ class TestUsageAnalyzer:
 
         # Create data with a gap (missing March)
         for month in [1, 2, 4, 5, 6]:
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -259,7 +260,7 @@ class TestUsageAnalyzer:
 
         # Only 3 months - not enough for seasonal detection
         for month in range(1, 4):
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -271,7 +272,7 @@ class TestUsageAnalyzer:
         assert analysis.seasonal_pattern == SeasonalPattern.UNKNOWN
 
     def test_statistics_calculation(
-        self, analyzer: UsageAnalyzer, summer_peak_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, summer_peak_data: list[Any]
     ) -> None:
         """Test basic statistics are calculated correctly."""
         analysis = analyzer.analyze(summer_peak_data)
@@ -283,7 +284,7 @@ class TestUsageAnalyzer:
         assert analysis.standard_deviation >= Decimal("0")
 
     def test_plan_suitability_insights_summer_peak(
-        self, analyzer: UsageAnalyzer, summer_peak_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, summer_peak_data: list[Any]
     ) -> None:
         """Test plan suitability insights for summer peak pattern."""
         analysis = analyzer.analyze(summer_peak_data)
@@ -296,7 +297,7 @@ class TestUsageAnalyzer:
         )
 
     def test_plan_suitability_insights_high_consumer(
-        self, analyzer: UsageAnalyzer, summer_peak_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, summer_peak_data: list[Any]
     ) -> None:
         """Test insights for high consumption."""
         analysis = analyzer.analyze(summer_peak_data)
@@ -328,7 +329,7 @@ class TestUsageAnalyzer:
         }
 
         for month, kwh in monthly_kwh.items():
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -346,7 +347,7 @@ class TestUsageAnalyzer:
 
         base_kwh = 1400
         for month in range(1, 13):
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -368,7 +369,7 @@ class TestUsageAnalyzer:
         monthly_kwh = [900, 905, 895, 910, 890, 900, 905, 895, 910, 890, 900, 905]
 
         for month, kwh in enumerate(monthly_kwh, 1):
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -387,7 +388,7 @@ class TestUsageAnalyzer:
 
         # Medium usage household (~8400 kWh/year)
         for month in range(1, 13):
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -406,7 +407,7 @@ class TestUsageAnalyzer:
 
         # Very high usage household (~18000 kWh/year)
         for month in range(1, 13):
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)
@@ -419,7 +420,7 @@ class TestUsageAnalyzer:
         assert analysis.is_high_consumer is True
 
     def test_plan_suitability_insights_winter_peak(
-        self, analyzer: UsageAnalyzer, winter_peak_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, winter_peak_data: list[Any]
     ) -> None:
         """Test plan suitability insights for winter peak pattern."""
         analysis = analyzer.analyze(winter_peak_data)
@@ -432,7 +433,7 @@ class TestUsageAnalyzer:
         )
 
     def test_plan_suitability_insights_flat_pattern(
-        self, analyzer: UsageAnalyzer, flat_usage_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, flat_usage_data: list[Any]
     ) -> None:
         """Test plan suitability insights for flat pattern."""
         analysis = analyzer.analyze(flat_usage_data)
@@ -445,7 +446,7 @@ class TestUsageAnalyzer:
         )
 
     def test_plan_suitability_insights_increasing_trend(
-        self, analyzer: UsageAnalyzer, increasing_trend_data: list[CustomerUsage]
+        self, analyzer: UsageAnalyzer, increasing_trend_data: list[Any]
     ) -> None:
         """Test insights for increasing usage trend."""
         analysis = analyzer.analyze(increasing_trend_data)
@@ -461,7 +462,7 @@ class TestUsageAnalyzer:
 
         # 6 months of 1000 kWh each
         for month in range(1, 7):
-            usage = CustomerUsage.__new__(CustomerUsage)
+            usage = SimpleNamespace()
             usage.id = uuid4()
             usage.customer_id = customer_id
             usage.usage_date = date(2024, month, 1)

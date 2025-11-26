@@ -1,12 +1,12 @@
 """Unit tests for MCDA scoring engine."""
 
 from decimal import Decimal
+from types import SimpleNamespace
+from typing import Any
 from uuid import uuid4
 
 import pytest
 
-from app.models.plan import EnergyPlan, Supplier
-from app.models.preference import CustomerPreference
 from app.services.scoring import ScoringEngine
 
 
@@ -19,21 +19,21 @@ class TestScoringEngine:
         return ScoringEngine()
 
     @pytest.fixture
-    def sample_supplier(self) -> Supplier:
+    def sample_supplier(self) -> Any:
         """Create a sample supplier."""
-        supplier = Supplier.__new__(Supplier)
+        supplier = SimpleNamespace()
         supplier.id = uuid4()
         supplier.name = "Test Supplier"
         supplier.rating = Decimal("4.5")
         return supplier
 
     @pytest.fixture
-    def sample_plans(self, sample_supplier: Supplier) -> list[EnergyPlan]:
+    def sample_plans(self, sample_supplier: Any) -> list[Any]:
         """Create sample plans for testing."""
         plans = []
 
         # Cheap plan with low renewable
-        plan1 = EnergyPlan.__new__(EnergyPlan)
+        plan1 = SimpleNamespace()
         plan1.id = uuid4()
         plan1.name = "Cheap Plan"
         plan1.rate_per_kwh = Decimal("0.08")
@@ -45,7 +45,7 @@ class TestScoringEngine:
         plans.append(plan1)
 
         # Expensive plan with high renewable
-        plan2 = EnergyPlan.__new__(EnergyPlan)
+        plan2 = SimpleNamespace()
         plan2.id = uuid4()
         plan2.name = "Green Plan"
         plan2.rate_per_kwh = Decimal("0.12")
@@ -57,7 +57,7 @@ class TestScoringEngine:
         plans.append(plan2)
 
         # Flexible plan
-        plan3 = EnergyPlan.__new__(EnergyPlan)
+        plan3 = SimpleNamespace()
         plan3.id = uuid4()
         plan3.name = "Flex Plan"
         plan3.rate_per_kwh = Decimal("0.10")
@@ -71,9 +71,9 @@ class TestScoringEngine:
         return plans
 
     @pytest.fixture
-    def cost_focused_preferences(self) -> CustomerPreference:
+    def cost_focused_preferences(self) -> Any:
         """Create cost-focused preference."""
-        pref = CustomerPreference.__new__(CustomerPreference)
+        pref = SimpleNamespace()
         pref.customer_id = uuid4()
         pref.cost_savings_weight = Decimal("0.70")
         pref.flexibility_weight = Decimal("0.10")
@@ -82,9 +82,9 @@ class TestScoringEngine:
         return pref
 
     @pytest.fixture
-    def green_focused_preferences(self) -> CustomerPreference:
+    def green_focused_preferences(self) -> Any:
         """Create renewable-focused preference."""
-        pref = CustomerPreference.__new__(CustomerPreference)
+        pref = SimpleNamespace()
         pref.customer_id = uuid4()
         pref.cost_savings_weight = Decimal("0.10")
         pref.flexibility_weight = Decimal("0.10")
@@ -95,8 +95,8 @@ class TestScoringEngine:
     def test_score_plans_cost_focused(
         self,
         engine: ScoringEngine,
-        sample_plans: list[EnergyPlan],
-        cost_focused_preferences: CustomerPreference,
+        sample_plans: list[Any],
+        cost_focused_preferences: Any,
     ) -> None:
         """Test that cost-focused preferences rank cheap plans higher."""
         # Create costs for each plan
@@ -117,8 +117,8 @@ class TestScoringEngine:
     def test_score_plans_green_focused(
         self,
         engine: ScoringEngine,
-        sample_plans: list[EnergyPlan],
-        green_focused_preferences: CustomerPreference,
+        sample_plans: list[Any],
+        green_focused_preferences: Any,
     ) -> None:
         """Test that green-focused preferences rank renewable plans higher."""
         costs = {
@@ -137,8 +137,8 @@ class TestScoringEngine:
     def test_score_all_components_calculated(
         self,
         engine: ScoringEngine,
-        sample_plans: list[EnergyPlan],
-        cost_focused_preferences: CustomerPreference,
+        sample_plans: list[Any],
+        cost_focused_preferences: Any,
     ) -> None:
         """Test that all score components are calculated."""
         costs = {
@@ -160,7 +160,7 @@ class TestScoringEngine:
     def test_empty_plans_returns_empty(
         self,
         engine: ScoringEngine,
-        cost_focused_preferences: CustomerPreference,
+        cost_focused_preferences: Any,
     ) -> None:
         """Test that empty plan list returns empty scores."""
         scored = engine.score_plans([], {}, cost_focused_preferences)

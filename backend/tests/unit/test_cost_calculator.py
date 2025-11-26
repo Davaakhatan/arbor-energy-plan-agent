@@ -2,11 +2,11 @@
 
 from datetime import date
 from decimal import Decimal
+from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
-from app.models.customer import CustomerUsage
-from app.models.plan import EnergyPlan
 from app.services.cost_calculator import CostCalculator
 
 
@@ -19,21 +19,21 @@ class TestCostCalculator:
         return CostCalculator()
 
     @pytest.fixture
-    def sample_usage(self) -> list[CustomerUsage]:
+    def sample_usage(self) -> list[Any]:
         """Create sample usage data."""
         # Create mock usage data (12 months, 1000 kWh each)
         usage = []
         for month in range(1, 13):
-            u = CustomerUsage.__new__(CustomerUsage)
+            u = SimpleNamespace()
             u.usage_date = date(2024, month, 1)
             u.kwh_usage = Decimal("1000.00")
             usage.append(u)
         return usage
 
     @pytest.fixture
-    def sample_plan(self) -> EnergyPlan:
+    def sample_plan(self) -> Any:
         """Create sample plan."""
-        plan = EnergyPlan.__new__(EnergyPlan)
+        plan = SimpleNamespace()
         plan.rate_per_kwh = Decimal("0.10")
         plan.monthly_fee = Decimal("10.00")
         plan.contract_length_months = 12
@@ -58,13 +58,13 @@ class TestCostCalculator:
     def test_calculate_annual_cost_partial_year(
         self,
         calculator: CostCalculator,
-        sample_plan: EnergyPlan,
+        sample_plan: Any,
     ) -> None:
         """Test annual cost with less than 12 months of data."""
         # 6 months of data
         usage = []
         for month in range(1, 7):
-            u = CustomerUsage.__new__(CustomerUsage)
+            u = SimpleNamespace()
             u.usage_date = date(2024, month, 1)
             u.kwh_usage = Decimal("1000.00")
             usage.append(u)
@@ -78,7 +78,7 @@ class TestCostCalculator:
     def test_calculate_annual_cost_empty_usage(
         self,
         calculator: CostCalculator,
-        sample_plan: EnergyPlan,
+        sample_plan: Any,
     ) -> None:
         """Test with no usage data."""
         cost = calculator.calculate_annual_cost([], sample_plan)
