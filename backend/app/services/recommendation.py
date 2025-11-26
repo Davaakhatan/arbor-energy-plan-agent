@@ -235,18 +235,19 @@ class RecommendationService:
         for plan in plans:
             supplier_name = plan.supplier.name if plan.supplier else None
 
-            # Check renewable minimum
-            if plan.renewable_percentage < preferences.min_renewable_percentage:
+            # Check renewable minimum (skip if not set)
+            min_renewable = preferences.min_renewable_percentage or 0
+            if plan.renewable_percentage < min_renewable:
                 filtered_out.append(
                     FilteredPlanResponse(
                         plan_id=plan.id,
                         plan_name=plan.name,
                         supplier_name=supplier_name,
                         filter_code="LOW_RENEWABLE",
-                        filter_reason=f"Renewable energy is {plan.renewable_percentage}%, below your {preferences.min_renewable_percentage}% minimum requirement.",
+                        filter_reason=f"Renewable energy is {plan.renewable_percentage}%, below your {min_renewable}% minimum requirement.",
                         details={
                             "plan_renewable": plan.renewable_percentage,
-                            "required_renewable": preferences.min_renewable_percentage,
+                            "required_renewable": min_renewable,
                         },
                     )
                 )
