@@ -130,5 +130,47 @@ Customers in deregulated energy markets are overwhelmed by the multitude of ener
 
 - **In-depth Energy Market Analysis**: Detailed market trend analysis is beyond the scope of this release.
 
+---
+
+## 12. Implemented Features (Beyond Original Scope)
+
+The following features were implemented in addition to the original PRD requirements:
+
+### 12.1 Enhanced Visualization & Analysis
+
+| Feature | Description |
+|---------|-------------|
+| **Plan Comparison View** | Side-by-side comparison of up to 3 recommended plans with key metrics |
+| **Cost Projection Chart** | 12-month visual cost projections with seasonal usage patterns |
+| **Savings Calculator** | Interactive what-if analysis tool for usage adjustments |
+| **Historical Rate Comparison** | Compare current rates against historical market data (3/6/12 months) |
+
+### 12.2 Smart Data Input
+
+| Feature | Description |
+|---------|-------------|
+| **Smart Defaults** | Usage estimation based on home type, occupants, climate zone, and appliances |
+| **CSV Upload** | Bulk upload of 12-month usage data via CSV file |
+
+### 12.3 User Engagement Features
+
+| Feature | Description |
+|---------|-------------|
+| **Switching Guide** | Step-by-step guide for switching energy providers |
+| **Price Drop Alerts** | Email notifications when rates drop below user-defined targets |
+| **Contract Reminders** | Calendar integration (.ics) and email reminders for contract end dates |
+| **Export & Share** | PDF and CSV export of recommendations |
+
+### 12.4 Technical Enhancements
+
+| Feature | Description |
+|---------|-------------|
+| **AWS Infrastructure** | Complete Terraform configuration for ECS, RDS, ElastiCache, ALB |
+| **CI/CD Pipelines** | GitHub Actions for automated testing and deployment |
+| **Load Testing** | Locust-based performance benchmarking |
+| **CloudWatch Monitoring** | Application metrics and alerting |
+
+---
+
 This PRD outlines the specifications and rationale for developing the AI Energy Plan Recommendation Agent. It is designed to be a self-contained document that guides the development and ensures a shared understanding among stakeholders for independent execution.
 
