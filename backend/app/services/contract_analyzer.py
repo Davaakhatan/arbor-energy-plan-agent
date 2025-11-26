@@ -373,27 +373,26 @@ class ContractAnalyzer:
                 }
 
         # Scenario 5: Current contract ending very soon - marginal benefit
-        if has_active_contract and days_until_end and days_until_end <= 14:
+        if has_active_contract and days_until_end and days_until_end <= 14 and early_termination_fee > 0:
             # Contract ends in 2 weeks, might not be worth ETF hassle
-            if early_termination_fee > 0:
-                two_week_savings = monthly_savings / 2
-                if early_termination_fee > two_week_savings * 3:  # ETF > 6 weeks savings
-                    return {
-                        "recommendation": SwitchRecommendation.MARGINAL_BENEFIT,
-                        "reason": NotBeneficialReason.CONTRACT_TOO_SHORT,
-                        "confidence": 0.7,
-                        "explanation": (
-                            f"Your contract ends in only {days_until_end} days. "
-                            f"Paying the ${early_termination_fee} ETF for such a short period "
-                            "provides minimal benefit. Consider waiting."
-                        ),
-                        "details": {
-                            "days_remaining": days_until_end,
-                            "etf": str(early_termination_fee),
-                            "potential_savings_remaining": str(two_week_savings),
-                        },
-                        "optimal_date": current_contract_end,
-                    }
+            two_week_savings = monthly_savings / 2
+            if early_termination_fee > two_week_savings * 3:  # ETF > 6 weeks savings
+                return {
+                    "recommendation": SwitchRecommendation.MARGINAL_BENEFIT,
+                    "reason": NotBeneficialReason.CONTRACT_TOO_SHORT,
+                    "confidence": 0.7,
+                    "explanation": (
+                        f"Your contract ends in only {days_until_end} days. "
+                        f"Paying the ${early_termination_fee} ETF for such a short period "
+                        "provides minimal benefit. Consider waiting."
+                    ),
+                    "details": {
+                        "days_remaining": days_until_end,
+                        "etf": str(early_termination_fee),
+                        "potential_savings_remaining": str(two_week_savings),
+                    },
+                    "optimal_date": current_contract_end,
+                }
 
         # Scenario 6: Marginal savings - worth it but barely
         if annual_savings < self.MARGINAL_SAVINGS_THRESHOLD:

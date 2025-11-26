@@ -8,7 +8,6 @@ from app.core.logging import get_logger
 from app.core.redis import CacheKeys, CacheService
 from app.models.plan import EnergyPlan
 from app.repositories.plan import PlanRepository
-from app.schemas.plan import EnergyPlanResponse
 
 logger = get_logger(__name__)
 

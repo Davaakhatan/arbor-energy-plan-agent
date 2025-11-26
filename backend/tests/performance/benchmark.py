@@ -12,7 +12,6 @@ import statistics
 import time
 from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Any
 from uuid import uuid4
 
 import httpx
@@ -135,7 +134,7 @@ def print_result(result: BenchmarkResult) -> None:
     print(f"Total Requests: {result.total_requests}")
     print(f"Successful: {result.successful_requests}")
     print(f"Failed: {result.failed_requests}")
-    print(f"\nResponse Times:")
+    print("\nResponse Times:")
     print(f"  Min:    {result.min_time * 1000:.2f}ms")
     print(f"  Max:    {result.max_time * 1000:.2f}ms")
     print(f"  Avg:    {result.avg_time * 1000:.2f}ms")

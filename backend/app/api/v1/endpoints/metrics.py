@@ -1,7 +1,7 @@
 """Metrics and monitoring endpoints."""
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -10,7 +10,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.redis import CacheService, get_redis
+from app.core.redis import get_redis
 from app.models.customer import Customer
 from app.models.plan import EnergyPlan, Supplier
 
@@ -80,14 +80,14 @@ async def get_metrics(
     db: AsyncSession = Depends(get_db),
 ) -> ApplicationMetrics:
     """Get comprehensive application metrics for monitoring."""
-    current_time = datetime.now(timezone.utc)
+    current_time = datetime.now(UTC)
     uptime = time.time() - APP_START_TIME
 
     # System metrics
     system = SystemMetrics(
         uptime_seconds=uptime,
         uptime_human=format_uptime(uptime),
-        started_at=datetime.fromtimestamp(APP_START_TIME, tz=timezone.utc).isoformat(),
+        started_at=datetime.fromtimestamp(APP_START_TIME, tz=UTC).isoformat(),
         current_time=current_time.isoformat(),
     )
 

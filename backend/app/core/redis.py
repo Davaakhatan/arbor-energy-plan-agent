@@ -128,7 +128,7 @@ class CacheService:
 
         values = await self.client.mget(keys)
         result = {}
-        for key, value in zip(keys, values):
+        for key, value in zip(keys, values, strict=False):
             if value is not None:
                 try:
                     result[key] = json.loads(value)

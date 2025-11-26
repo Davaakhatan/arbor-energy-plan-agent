@@ -3,7 +3,6 @@
 import asyncio
 from collections.abc import AsyncGenerator, Generator
 from decimal import Decimal
-from typing import Any
 
 import pytest
 import pytest_asyncio

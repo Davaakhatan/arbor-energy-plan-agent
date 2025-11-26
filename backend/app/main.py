@@ -1,7 +1,7 @@
 """FastAPI application entry point."""
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager for startup/shutdown events."""
     # Startup
     logger.info(
@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 break
         except Exception as e:
             logger.warning("Failed to warm cache", error=str(e))
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.warning("Redis initialization timed out after 10s, continuing without cache")
     except Exception as e:
         logger.warning("Failed to initialize Redis", error=str(e))
@@ -112,7 +112,7 @@ def create_app() -> FastAPI:
 
     # Global exception handler for database integrity errors
     @app.exception_handler(IntegrityError)
-    async def integrity_error_handler(request: Request, exc: IntegrityError) -> JSONResponse:
+    async def integrity_error_handler(_request: Request, exc: IntegrityError) -> JSONResponse:
         """Handle database integrity errors gracefully."""
         logger.error("Database integrity error", error=str(exc))
         error_msg = str(exc.orig) if exc.orig else str(exc)
@@ -128,7 +128,7 @@ def create_app() -> FastAPI:
 
     # Global exception handler for unhandled errors
     @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    async def global_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
         """Handle unhandled exceptions gracefully."""
         logger.error("Unhandled exception", error=str(exc), exc_info=True)
         return JSONResponse(

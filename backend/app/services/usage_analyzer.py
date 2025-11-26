@@ -80,7 +80,6 @@ class UsageAnalyzer:
 
         # Extract values
         monthly_values = [float(u.kwh_usage) for u in sorted_data]
-        months = [u.usage_date.month for u in sorted_data]
 
         # Basic statistics
         total = sum(monthly_values)

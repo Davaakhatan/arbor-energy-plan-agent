@@ -1,6 +1,6 @@
 """Security utilities for authentication and authorization."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -46,7 +46,7 @@ def create_access_token(
     if expires_delta is None:
         expires_delta = timedelta(minutes=settings.access_token_expire_minutes)
 
-    expire = datetime.now(timezone.utc) + expires_delta
+    expire = datetime.now(UTC) + expires_delta
     to_encode = {
         "sub": subject,
         "exp": expire,
@@ -65,7 +65,7 @@ def decode_token(token: str) -> TokenData | None:
         )
         return TokenData(
             sub=payload["sub"],
-            exp=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
+            exp=datetime.fromtimestamp(payload["exp"], tz=UTC),
             type=payload.get("type", "access"),
         )
     except JWTError:

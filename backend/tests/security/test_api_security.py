@@ -211,6 +211,7 @@ class TestPreferenceValidation:
     ) -> None:
         """Test that preference weights are validated."""
         from decimal import Decimal
+
         from app.models.plan import EnergyPlan, Supplier
 
         # Setup test data
@@ -266,6 +267,7 @@ class TestPreferenceValidation:
     ) -> None:
         """Test renewable percentage bounds validation."""
         from decimal import Decimal
+
         from app.models.plan import EnergyPlan, Supplier
 
         supplier = Supplier(name="Renewable Test", rating=Decimal("4.0"))

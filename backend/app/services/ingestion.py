@@ -5,12 +5,10 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from io import StringIO
 from typing import Any
-from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 from app.core.logging import get_logger
-from app.models.customer import Customer, CustomerUsage
 from app.schemas.customer import CustomerUsageCreate
 
 logger = get_logger(__name__)
@@ -53,8 +51,8 @@ class UsageDataRow(BaseModel):
             cleaned = v.replace(",", "").strip()
             try:
                 return Decimal(cleaned)
-            except InvalidOperation:
-                raise ValueError(f"Unable to parse kWh usage: {v}")
+            except InvalidOperation as err:
+                raise ValueError(f"Unable to parse kWh usage: {v}") from err
         raise ValueError(f"Invalid kWh type: {type(v)}")
 
 

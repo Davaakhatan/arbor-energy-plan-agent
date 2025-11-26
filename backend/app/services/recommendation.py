@@ -1,14 +1,14 @@
 """Recommendation service implementing MCDA-based plan recommendations."""
 
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.core.redis import CacheKeys, CacheService
+from app.core.redis import CacheService
 from app.models.customer import Customer
 from app.models.plan import EnergyPlan
 from app.models.preference import CustomerPreference
@@ -142,8 +142,8 @@ class RecommendationService:
                     explanation_details=details,
                     risk_flags=risk_flags,
                     confidence_level=self._determine_confidence(customer, risk_flags),
-                    created_at=datetime.now(timezone.utc),
-                    expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+                    created_at=datetime.now(UTC),
+                    expires_at=datetime.now(UTC) + timedelta(hours=1),
                 )
             )
 
@@ -163,8 +163,8 @@ class RecommendationService:
             best_savings=max(r.projected_annual_savings for r in recommendations)
             if recommendations
             else Decimal("0.00"),
-            generated_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            generated_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
             processing_time_ms=processing_time_ms,
             warnings=self._generate_warnings(customer, plans, eligible_plans),
         )
@@ -305,9 +305,8 @@ class RecommendationService:
             return Decimal("0.00")
 
         # Check if contract has ended
-        if customer.contract_end_date:
-            if customer.contract_end_date <= datetime.now(timezone.utc).date():
-                return Decimal("0.00")
+        if customer.contract_end_date and customer.contract_end_date <= datetime.now(UTC).date():
+            return Decimal("0.00")
 
         return customer.early_termination_fee
 
@@ -315,8 +314,8 @@ class RecommendationService:
         self,
         plan: EnergyPlan,
         customer: Customer,
-        cost: dict,
-        scored: dict,
+        _cost: dict,
+        _scored: dict,
     ) -> list[RiskFlag]:
         """Assess risks associated with a recommendation."""
         risks = []
@@ -388,7 +387,7 @@ class RecommendationService:
         plan: EnergyPlan,
         scored: dict,
         savings: Decimal,
-        preferences: CustomerPreference,
+        _preferences: CustomerPreference,
     ) -> tuple[str, dict]:
         """Generate plain language explanation for recommendation."""
         parts = []

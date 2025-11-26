@@ -134,7 +134,7 @@ class ScoringEngine:
     def explain_score(
         self,
         scored_plan: dict,
-        preferences: CustomerPreference,
+        _preferences: CustomerPreference,
     ) -> str:
         """Generate explanation of why a plan received its score."""
         parts = []

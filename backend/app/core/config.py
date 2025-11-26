@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import Literal
 from urllib.parse import quote_plus
 
-from pydantic import PostgresDsn, RedisDsn, computed_field
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

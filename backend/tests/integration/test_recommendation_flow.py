@@ -205,7 +205,7 @@ async def test_recommendation_with_green_preferences(
 @pytest.mark.asyncio
 async def test_recommendation_insufficient_data(
     client: AsyncClient,
-    db_session: AsyncSession,
+    _db_session: AsyncSession,
 ) -> None:
     """Test that insufficient usage data returns appropriate error."""
     # Create customer with only 2 months of data
