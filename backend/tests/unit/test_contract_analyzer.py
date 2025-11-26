@@ -99,7 +99,8 @@ class TestContractAnalyzer:
         # Due to ETF making immediate switch less beneficial
         assert (
             analysis.switch_recommendation == SwitchRecommendation.NOT_BENEFICIAL
-            or analysis.switch_recommendation == SwitchRecommendation.WAIT_FOR_CONTRACT_END
+            or analysis.switch_recommendation
+            == SwitchRecommendation.WAIT_FOR_CONTRACT_END
         )
 
     def test_contract_ending_soon(
@@ -141,7 +142,11 @@ class TestContractAnalyzer:
         assert analysis.immediate_switch_savings < 0
         # Check for either "not save" or "lose money" in explanation
         explanation_lower = analysis.explanation.lower()
-        assert "not save" in explanation_lower or "lose money" in explanation_lower or "more per month" in explanation_lower
+        assert (
+            "not save" in explanation_lower
+            or "lose money" in explanation_lower
+            or "more per month" in explanation_lower
+        )
 
     def test_break_even_calculation(
         self, analyzer: ContractAnalyzer, today: date

@@ -34,7 +34,9 @@ def mock_redis():
     mock_client.ping = AsyncMock(return_value=True)
     mock_client.mget = AsyncMock(return_value=[])
     mock_client.incrby = AsyncMock(return_value=1)
-    mock_client.pipeline = MagicMock(return_value=MagicMock(execute=AsyncMock(return_value=[])))
+    mock_client.pipeline = MagicMock(
+        return_value=MagicMock(execute=AsyncMock(return_value=[]))
+    )
 
     # Patch the redis_client global
     original_client = redis_module.redis_client
