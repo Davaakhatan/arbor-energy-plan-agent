@@ -60,11 +60,11 @@ async def ingest_csv(
     try:
         content = await file.read()
         csv_content = content.decode("utf-8")
-    except UnicodeDecodeError:
+    except UnicodeDecodeError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File must be UTF-8 encoded",
-        )
+        ) from e
 
     # Parse CSV
     ingestion_service = DataIngestionService()

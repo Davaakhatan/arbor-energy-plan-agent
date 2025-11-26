@@ -7,7 +7,6 @@ Run with:
 Web UI: http://localhost:8089
 """
 
-import json
 import random
 import uuid
 from datetime import date, timedelta

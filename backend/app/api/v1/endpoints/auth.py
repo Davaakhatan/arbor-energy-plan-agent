@@ -7,8 +7,6 @@ from app.core.config import settings
 from app.core.security import (
     TokenResponse,
     create_access_token,
-    hash_password,
-    verify_password,
 )
 
 router = APIRouter()
