@@ -241,6 +241,7 @@ resource "aws_ecs_task_definition" "frontend" {
 
       environment = [
         { name = "NODE_ENV", value = "production" },
+        { name = "HOSTNAME", value = "0.0.0.0" },
         { name = "NEXT_PUBLIC_API_URL", value = "https://${var.domain_name}" }
       ]
 
