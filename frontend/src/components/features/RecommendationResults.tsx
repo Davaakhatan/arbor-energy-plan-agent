@@ -35,10 +35,16 @@ import {
   XCircle,
   ChevronDown,
   ChevronUp,
+  ArrowLeftRight,
 } from "lucide-react";
 import { FeedbackForm } from "./FeedbackForm";
 import { PlanDetailsModal } from "./PlanDetailsModal";
 import { PlanSelectionModal } from "./PlanSelectionModal";
+import { PlanComparisonView } from "./PlanComparisonView";
+import { CostProjectionChart } from "./CostProjectionChart";
+import { SavingsCalculator } from "./SavingsCalculator";
+import { ExportRecommendations } from "./ExportRecommendations";
+import { SwitchingGuide } from "./SwitchingGuide";
 import type { Recommendation, RecommendationSet, UsageAnalysis, FilteredPlan } from "@/types";
 
 interface RecommendationResultsProps {
@@ -50,8 +56,9 @@ export function RecommendationResults({
   recommendations,
   onStartOver,
 }: RecommendationResultsProps) {
-  const { recommendations: plans, best_savings, processing_time_ms, warnings, usage_analysis, filtered_plans } = recommendations;
+  const { recommendations: plans, best_savings, processing_time_ms, warnings, usage_analysis, filtered_plans, current_annual_cost } = recommendations;
   const [showFiltered, setShowFiltered] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
 
   return (
     <div className="space-y-4 sm:space-y-6" role="region" aria-label="Recommendation Results">
@@ -76,7 +83,26 @@ export function RecommendationResults({
         <p className="text-xs text-gray-400 mt-1">
           Generated in {processing_time_ms}ms
         </p>
+        {plans.length > 1 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => setShowComparison(true)}
+          >
+            <ArrowLeftRight className="w-4 h-4 mr-2" aria-hidden="true" />
+            Compare Plans
+          </Button>
+        )}
       </header>
+
+      {/* Plan Comparison View */}
+      {showComparison && (
+        <PlanComparisonView
+          recommendations={plans}
+          onClose={() => setShowComparison(false)}
+        />
+      )}
 
       {/* Warnings */}
       {warnings.length > 0 && (
@@ -99,6 +125,19 @@ export function RecommendationResults({
       {/* Usage Insights */}
       {usage_analysis && <UsageInsightsCard analysis={usage_analysis} />}
 
+      {/* Cost Projection Chart */}
+      <CostProjectionChart
+        recommendations={plans}
+        usageAnalysis={usage_analysis}
+        currentAnnualCost={current_annual_cost ? Number(current_annual_cost) : undefined}
+      />
+
+      {/* Savings Calculator */}
+      <SavingsCalculator
+        recommendations={plans}
+        initialMonthlyUsage={usage_analysis ? Math.round(Number(usage_analysis.average_monthly_kwh)) : 1000}
+      />
+
       {/* Recommendation cards */}
       <ul className="space-y-4" aria-label="Recommended plans">
         {plans.map((rec) => (
@@ -111,6 +150,11 @@ export function RecommendationResults({
         ))}
       </ul>
 
+      {/* Switching Guide for Top Recommendation */}
+      {plans.length > 0 && (
+        <SwitchingGuide recommendation={plans[0]} />
+      )}
+
       {/* Filtered Plans - "Why Not" Section */}
       {filtered_plans && filtered_plans.length > 0 && (
         <FilteredPlansSection
@@ -119,6 +163,9 @@ export function RecommendationResults({
           onToggle={() => setShowFiltered(!showFiltered)}
         />
       )}
+
+      {/* Export & Share */}
+      <ExportRecommendations recommendations={recommendations} />
 
       {/* Actions */}
       <div className="flex justify-center pt-2">
