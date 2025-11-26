@@ -29,8 +29,8 @@ jobs:
     environment: ${{ github.event.inputs.environment || 'staging' }}
 
     outputs:
-      backend-image: ${{ steps.build-backend.outputs.image }}
-      frontend-image: ${{ steps.build-frontend.outputs.image }}
+      backend-image: ${{ steps.set-output.outputs.backend-image }}
+      frontend-image: ${{ steps.set-output.outputs.frontend-image }}
 
     steps:
       - uses: actions/checkout@v4
@@ -78,13 +78,14 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Set output
+        id: set-output
         run: |
           echo "backend-image=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_BACKEND }}:${{ github.sha }}" >> $GITHUB_OUTPUT
           echo "frontend-image=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_FRONTEND }}:${{ github.sha }}" >> $GITHUB_OUTPUT
 
-  # Deploy to ECS
-  deploy:
-    name: Deploy to ECS
+  # Deploy backend to ECS
+  deploy-backend:
+    name: Deploy Backend to ECS
     runs-on: ubuntu-latest
     needs: build-and-push
     environment: ${{ github.event.inputs.environment || 'staging' }}
@@ -99,49 +100,72 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Download task definition
+      - name: Download backend task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition arbor-${{ github.event.inputs.environment || 'staging' }} \
-            --query taskDefinition > task-definition.json
+            --task-definition arbor-${{ github.event.inputs.environment || 'staging' }}-backend \
+            --query taskDefinition > backend-task-definition.json
 
       - name: Update backend image in task definition
         id: task-def-backend
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: task-definition.json
+          task-definition: backend-task-definition.json
           container-name: backend
           image: ${{ needs.build-and-push.outputs.backend-image }}
+
+      - name: Deploy backend to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-backend.outputs.task-definition }}
+          service: arbor-${{ github.event.inputs.environment || 'staging' }}-backend
+          cluster: arbor-${{ github.event.inputs.environment || 'staging' }}-cluster
+          wait-for-service-stability: true
+
+  # Deploy frontend to ECS
+  deploy-frontend:
+    name: Deploy Frontend to ECS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download frontend task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition arbor-${{ github.event.inputs.environment || 'staging' }}-frontend \
+            --query taskDefinition > frontend-task-definition.json
 
       - name: Update frontend image in task definition
         id: task-def-frontend
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-backend.outputs.task-definition }}
+          task-definition: frontend-task-definition.json
           container-name: frontend
           image: ${{ needs.build-and-push.outputs.frontend-image }}
 
-      - name: Deploy to Amazon ECS
+      - name: Deploy frontend to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-frontend.outputs.task-definition }}
-          service: arbor-${{ github.event.inputs.environment || 'staging' }}
-          cluster: arbor-cluster
+          service: arbor-${{ github.event.inputs.environment || 'staging' }}-frontend
+          cluster: arbor-${{ github.event.inputs.environment || 'staging' }}-cluster
           wait-for-service-stability: true
-
-      - name: Run database migrations
-        run: |
-          aws ecs run-task \
-            --cluster arbor-cluster \
-            --task-definition arbor-migrations \
-            --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.SUBNET_IDS }}],securityGroups=[${{ secrets.SECURITY_GROUP_ID }}],assignPublicIp=ENABLED}"
 
   # Post-deployment verification
   verify:
     name: Verify Deployment
     runs-on: ubuntu-latest
-    needs: deploy
+    needs: [deploy-backend, deploy-frontend]
     environment: ${{ github.event.inputs.environment || 'staging' }}
 
     steps:
@@ -167,10 +191,8 @@ jobs:
         if: success()
         run: |
           echo "Deployment successful to ${{ github.event.inputs.environment || 'staging' }}"
-          # Add Slack/Teams notification here
 
       - name: Notify on failure
         if: failure()
         run: |
           echo "Deployment failed to ${{ github.event.inputs.environment || 'staging' }}"
-          # Add Slack/Teams notification here
