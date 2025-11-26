@@ -52,6 +52,25 @@ export interface EnergyPlan {
   supplier?: Supplier;
 }
 
+// Usage Analysis types
+export interface UsageAnalysis {
+  total_annual_kwh: number;
+  average_monthly_kwh: number;
+  min_monthly_kwh: number;
+  max_monthly_kwh: number;
+  seasonal_pattern: "summer_peak" | "winter_peak" | "dual_peak" | "flat";
+  seasonal_variation_percent: number;
+  peak_months: number[];
+  low_months: number[];
+  usage_trend: "increasing" | "decreasing" | "stable";
+  trend_percent_change: number;
+  consumption_tier: "low" | "medium" | "high" | "very_high";
+  is_high_consumer: boolean;
+  months_of_data: number;
+  data_quality_score: number;
+  insights: Record<string, string>;
+}
+
 // Recommendation types
 export interface RiskFlag {
   code: string;
@@ -81,9 +100,20 @@ export interface Recommendation {
   expires_at?: string;
 }
 
+export interface FilteredPlan {
+  plan_id: string;
+  plan_name: string;
+  supplier_name?: string;
+  filter_reason: string;
+  filter_code: "LOW_RENEWABLE" | "LONG_CONTRACT" | "VARIABLE_RATE" | "LOW_SCORE";
+  details: Record<string, unknown>;
+}
+
 export interface RecommendationSet {
   customer_id: string;
   recommendations: Recommendation[];
+  filtered_plans?: FilteredPlan[];
+  usage_analysis?: UsageAnalysis;
   current_annual_cost?: number;
   best_savings: number;
   generated_at: string;

@@ -109,6 +109,19 @@ class RecommendationResponse(BaseModel):
     expires_at: datetime | None
 
 
+class FilteredPlanResponse(BaseModel):
+    """Schema for a plan that was filtered out with explanation."""
+
+    plan_id: UUID
+    plan_name: str
+    supplier_name: str | None
+    filter_reason: str = Field(description="Why the plan was filtered out")
+    filter_code: str = Field(
+        description="Code: LOW_RENEWABLE, LONG_CONTRACT, VARIABLE_RATE, or LOW_SCORE"
+    )
+    details: dict = Field(default_factory=dict)
+
+
 class RecommendationSetResponse(BaseModel):
     """Response containing top 3 recommendations."""
 
@@ -116,6 +129,12 @@ class RecommendationSetResponse(BaseModel):
     recommendations: list[RecommendationResponse] = Field(
         max_length=3,
         description="Top 3 plan recommendations",
+    )
+
+    # Filtered plans with explanations
+    filtered_plans: list[FilteredPlanResponse] = Field(
+        default_factory=list,
+        description="Plans that were filtered out with reasons",
     )
 
     # Usage analysis

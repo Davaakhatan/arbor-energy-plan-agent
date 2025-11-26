@@ -25,11 +25,21 @@ import {
   CheckCircle,
   RefreshCw,
   MessageSquare,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Sun,
+  Snowflake,
+  Zap,
+  BarChart3,
+  XCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { FeedbackForm } from "./FeedbackForm";
 import { PlanDetailsModal } from "./PlanDetailsModal";
 import { PlanSelectionModal } from "./PlanSelectionModal";
-import type { Recommendation, RecommendationSet } from "@/types";
+import type { Recommendation, RecommendationSet, UsageAnalysis, FilteredPlan } from "@/types";
 
 interface RecommendationResultsProps {
   recommendations: RecommendationSet;
@@ -40,7 +50,8 @@ export function RecommendationResults({
   recommendations,
   onStartOver,
 }: RecommendationResultsProps) {
-  const { recommendations: plans, best_savings, processing_time_ms, warnings } = recommendations;
+  const { recommendations: plans, best_savings, processing_time_ms, warnings, usage_analysis, filtered_plans } = recommendations;
+  const [showFiltered, setShowFiltered] = useState(false);
 
   return (
     <div className="space-y-4 sm:space-y-6" role="region" aria-label="Recommendation Results">
@@ -85,6 +96,9 @@ export function RecommendationResults({
         </div>
       )}
 
+      {/* Usage Insights */}
+      {usage_analysis && <UsageInsightsCard analysis={usage_analysis} />}
+
       {/* Recommendation cards */}
       <ul className="space-y-4" aria-label="Recommended plans">
         {plans.map((rec) => (
@@ -96,6 +110,15 @@ export function RecommendationResults({
           </li>
         ))}
       </ul>
+
+      {/* Filtered Plans - "Why Not" Section */}
+      {filtered_plans && filtered_plans.length > 0 && (
+        <FilteredPlansSection
+          filteredPlans={filtered_plans}
+          isExpanded={showFiltered}
+          onToggle={() => setShowFiltered(!showFiltered)}
+        />
+      )}
 
       {/* Actions */}
       <div className="flex justify-center pt-2">
@@ -331,5 +354,303 @@ function ScoreItem({
       </div>
       <div className="text-xs text-gray-500">{label}</div>
     </div>
+  );
+}
+
+function UsageInsightsCard({ analysis }: { analysis: UsageAnalysis }) {
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  const getSeasonalIcon = () => {
+    switch (analysis.seasonal_pattern) {
+      case "summer_peak":
+        return <Sun className="w-5 h-5 text-orange-500" aria-hidden="true" />;
+      case "winter_peak":
+        return <Snowflake className="w-5 h-5 text-blue-500" aria-hidden="true" />;
+      case "dual_peak":
+        return <Zap className="w-5 h-5 text-purple-500" aria-hidden="true" />;
+      default:
+        return <Minus className="w-5 h-5 text-gray-500" aria-hidden="true" />;
+    }
+  };
+
+  const getSeasonalLabel = () => {
+    switch (analysis.seasonal_pattern) {
+      case "summer_peak":
+        return "Summer Peak";
+      case "winter_peak":
+        return "Winter Peak";
+      case "dual_peak":
+        return "Dual Peak (Summer & Winter)";
+      default:
+        return "Flat Usage";
+    }
+  };
+
+  const getTrendIcon = () => {
+    switch (analysis.usage_trend) {
+      case "increasing":
+        return <TrendingUp className="w-5 h-5 text-red-500" aria-hidden="true" />;
+      case "decreasing":
+        return <TrendingDown className="w-5 h-5 text-green-500" aria-hidden="true" />;
+      default:
+        return <Minus className="w-5 h-5 text-gray-500" aria-hidden="true" />;
+    }
+  };
+
+  const getTrendLabel = () => {
+    const change = Math.abs(Number(analysis.trend_percent_change)).toFixed(1);
+    switch (analysis.usage_trend) {
+      case "increasing":
+        return `Increasing (+${change}%)`;
+      case "decreasing":
+        return `Decreasing (-${change}%)`;
+      default:
+        return "Stable";
+    }
+  };
+
+  const getTierColor = () => {
+    switch (analysis.consumption_tier) {
+      case "low":
+        return "bg-green-100 text-green-800";
+      case "medium":
+        return "bg-blue-100 text-blue-800";
+      case "high":
+        return "bg-orange-100 text-orange-800";
+      case "very_high":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getTierLabel = () => {
+    switch (analysis.consumption_tier) {
+      case "low":
+        return "Low Consumer";
+      case "medium":
+        return "Average Consumer";
+      case "high":
+        return "High Consumer";
+      case "very_high":
+        return "Very High Consumer";
+      default:
+        return analysis.consumption_tier;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-arbor-primary" aria-hidden="true" />
+          Your Usage Profile
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Key metrics */}
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+          <div className="text-center p-3 bg-gray-50 rounded-lg">
+            <dt className="text-xs text-gray-500 mb-1">Annual Usage</dt>
+            <dd className="text-lg font-semibold text-gray-900">
+              {Number(analysis.total_annual_kwh).toLocaleString()} kWh
+            </dd>
+          </div>
+          <div className="text-center p-3 bg-gray-50 rounded-lg">
+            <dt className="text-xs text-gray-500 mb-1">Monthly Avg</dt>
+            <dd className="text-lg font-semibold text-gray-900">
+              {Math.round(Number(analysis.average_monthly_kwh)).toLocaleString()} kWh
+            </dd>
+          </div>
+          <div className="text-center p-3 bg-gray-50 rounded-lg">
+            <dt className="text-xs text-gray-500 mb-1">Data Quality</dt>
+            <dd className="text-lg font-semibold text-gray-900">
+              {Math.round(Number(analysis.data_quality_score) * 100)}%
+            </dd>
+          </div>
+          <div className="text-center p-3 bg-gray-50 rounded-lg">
+            <dt className="text-xs text-gray-500 mb-1">Months Analyzed</dt>
+            <dd className="text-lg font-semibold text-gray-900">
+              {analysis.months_of_data}
+            </dd>
+          </div>
+        </dl>
+
+        {/* Pattern summary */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          {/* Seasonal Pattern */}
+          <div className="flex items-center gap-3 p-3 border rounded-lg">
+            {getSeasonalIcon()}
+            <div>
+              <div className="text-xs text-gray-500">Seasonal Pattern</div>
+              <div className="font-medium text-sm">{getSeasonalLabel()}</div>
+              {Number(analysis.seasonal_variation_percent) > 0 && (
+                <div className="text-xs text-gray-400">
+                  ±{Number(analysis.seasonal_variation_percent).toFixed(0)}% variation
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Usage Trend */}
+          <div className="flex items-center gap-3 p-3 border rounded-lg">
+            {getTrendIcon()}
+            <div>
+              <div className="text-xs text-gray-500">Usage Trend</div>
+              <div className="font-medium text-sm">{getTrendLabel()}</div>
+            </div>
+          </div>
+
+          {/* Consumption Tier */}
+          <div className="flex items-center gap-3 p-3 border rounded-lg">
+            <div className={`px-2 py-1 rounded text-xs font-medium ${getTierColor()}`}>
+              {getTierLabel()}
+            </div>
+          </div>
+        </div>
+
+        {/* Peak and Low months */}
+        {(analysis.peak_months.length > 0 || analysis.low_months.length > 0) && (
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {analysis.peak_months.length > 0 && (
+              <div className="p-3 bg-red-50 rounded-lg">
+                <div className="text-xs text-red-600 font-medium mb-1">Peak Usage Months</div>
+                <div className="text-sm text-red-800">
+                  {analysis.peak_months.map(m => monthNames[m - 1]).join(", ")}
+                </div>
+              </div>
+            )}
+            {analysis.low_months.length > 0 && (
+              <div className="p-3 bg-green-50 rounded-lg">
+                <div className="text-xs text-green-600 font-medium mb-1">Low Usage Months</div>
+                <div className="text-sm text-green-800">
+                  {analysis.low_months.map(m => monthNames[m - 1]).join(", ")}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Personalized Insights */}
+        {Object.keys(analysis.insights).length > 0 && (
+          <div className="bg-arbor-light rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-arbor-primary mb-2 flex items-center gap-2">
+              <Zap className="w-4 h-4" aria-hidden="true" />
+              Personalized Insights
+            </h4>
+            <ul className="space-y-2">
+              {Object.entries(analysis.insights).map(([key, value]) => (
+                <li key={key} className="text-sm text-gray-700 flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-arbor-primary flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <span>{value}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function FilteredPlansSection({
+  filteredPlans,
+  isExpanded,
+  onToggle,
+}: {
+  filteredPlans: FilteredPlan[];
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const getFilterIcon = (code: string) => {
+    switch (code) {
+      case "LOW_RENEWABLE":
+        return <Leaf className="w-4 h-4 text-gray-400" aria-hidden="true" />;
+      case "LONG_CONTRACT":
+        return <Clock className="w-4 h-4 text-gray-400" aria-hidden="true" />;
+      case "VARIABLE_RATE":
+        return <TrendingUp className="w-4 h-4 text-gray-400" aria-hidden="true" />;
+      default:
+        return <XCircle className="w-4 h-4 text-gray-400" aria-hidden="true" />;
+    }
+  };
+
+  const getFilterBadgeColor = (code: string) => {
+    switch (code) {
+      case "LOW_RENEWABLE":
+        return "bg-green-100 text-green-700";
+      case "LONG_CONTRACT":
+        return "bg-blue-100 text-blue-700";
+      case "VARIABLE_RATE":
+        return "bg-orange-100 text-orange-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const getFilterLabel = (code: string) => {
+    switch (code) {
+      case "LOW_RENEWABLE":
+        return "Low Renewable";
+      case "LONG_CONTRACT":
+        return "Long Contract";
+      case "VARIABLE_RATE":
+        return "Variable Rate";
+      default:
+        return code;
+    }
+  };
+
+  return (
+    <Card>
+      <button
+        onClick={onToggle}
+        className="w-full px-4 sm:px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg"
+        aria-expanded={isExpanded}
+      >
+        <div className="flex items-center gap-2">
+          <XCircle className="w-5 h-5 text-gray-400" aria-hidden="true" />
+          <span className="font-medium text-gray-700">
+            Why not these {filteredPlans.length} plans?
+          </span>
+          <span className="text-sm text-gray-500">
+            (Filtered based on your preferences)
+          </span>
+        </div>
+        {isExpanded ? (
+          <ChevronUp className="w-5 h-5 text-gray-400" aria-hidden="true" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-gray-400" aria-hidden="true" />
+        )}
+      </button>
+
+      {isExpanded && (
+        <CardContent className="pt-0">
+          <ul className="divide-y divide-gray-100">
+            {filteredPlans.map((plan) => (
+              <li key={plan.plan_id} className="py-3 first:pt-0 last:pb-0">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex items-start gap-3">
+                    {getFilterIcon(plan.filter_code)}
+                    <div>
+                      <div className="font-medium text-gray-900">{plan.plan_name}</div>
+                      {plan.supplier_name && (
+                        <div className="text-sm text-gray-500">{plan.supplier_name}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-7 sm:ml-0">
+                    <span className={`text-xs px-2 py-1 rounded-full ${getFilterBadgeColor(plan.filter_code)}`}>
+                      {getFilterLabel(plan.filter_code)}
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-2 ml-7 text-sm text-gray-600">{plan.filter_reason}</p>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      )}
+    </Card>
   );
 }

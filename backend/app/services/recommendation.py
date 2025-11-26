@@ -16,6 +16,7 @@ from app.repositories.plan import PlanRepository
 from app.repositories.preference import PreferenceRepository
 from app.schemas.preference import CustomerPreferenceCreate
 from app.schemas.recommendation import (
+    FilteredPlanResponse,
     RecommendationResponse,
     RecommendationSetResponse,
     RiskFlag,
@@ -62,7 +63,7 @@ class RecommendationService:
         plans = await self.cached_plans.get_all_active_plans()
 
         # Filter plans based on hard constraints
-        eligible_plans = self._filter_by_constraints(plans, preferences)
+        eligible_plans, filtered_plans = self._filter_by_constraints(plans, preferences)
 
         # Calculate costs for each plan
         plan_costs = self.cost_calculator.calculate_all_costs(
@@ -156,6 +157,7 @@ class RecommendationService:
         response = RecommendationSetResponse(
             customer_id=customer.id,
             recommendations=recommendations,
+            filtered_plans=filtered_plans,
             usage_analysis=usage_analysis,
             current_annual_cost=current_cost,
             best_savings=max(r.projected_annual_savings for r in recommendations)
@@ -219,12 +221,33 @@ class RecommendationService:
         self,
         plans: list[EnergyPlan],
         preferences: CustomerPreference,
-    ) -> list[EnergyPlan]:
-        """Filter plans based on hard constraints."""
-        filtered = []
+    ) -> tuple[list[EnergyPlan], list[FilteredPlanResponse]]:
+        """Filter plans based on hard constraints.
+
+        Returns:
+            Tuple of (eligible_plans, filtered_out_plans_with_reasons)
+        """
+        eligible = []
+        filtered_out = []
+
         for plan in plans:
+            supplier_name = plan.supplier.name if plan.supplier else None
+
             # Check renewable minimum
             if plan.renewable_percentage < preferences.min_renewable_percentage:
+                filtered_out.append(
+                    FilteredPlanResponse(
+                        plan_id=plan.id,
+                        plan_name=plan.name,
+                        supplier_name=supplier_name,
+                        filter_code="LOW_RENEWABLE",
+                        filter_reason=f"Renewable energy is {plan.renewable_percentage}%, below your {preferences.min_renewable_percentage}% minimum requirement.",
+                        details={
+                            "plan_renewable": plan.renewable_percentage,
+                            "required_renewable": preferences.min_renewable_percentage,
+                        },
+                    )
+                )
                 continue
 
             # Check contract length maximum
@@ -232,6 +255,19 @@ class RecommendationService:
                 preferences.max_contract_months
                 and plan.contract_length_months > preferences.max_contract_months
             ):
+                filtered_out.append(
+                    FilteredPlanResponse(
+                        plan_id=plan.id,
+                        plan_name=plan.name,
+                        supplier_name=supplier_name,
+                        filter_code="LONG_CONTRACT",
+                        filter_reason=f"Contract length is {plan.contract_length_months} months, exceeding your {preferences.max_contract_months}-month maximum.",
+                        details={
+                            "plan_contract_months": plan.contract_length_months,
+                            "max_contract_months": preferences.max_contract_months,
+                        },
+                    )
+                )
                 continue
 
             # Check variable rate avoidance
@@ -239,11 +275,22 @@ class RecommendationService:
                 "variable",
                 "indexed",
             ]:
+                rate_label = "variable" if plan.rate_type == "variable" else "indexed"
+                filtered_out.append(
+                    FilteredPlanResponse(
+                        plan_id=plan.id,
+                        plan_name=plan.name,
+                        supplier_name=supplier_name,
+                        filter_code="VARIABLE_RATE",
+                        filter_reason=f"This plan has a {rate_label} rate, which you've chosen to avoid.",
+                        details={"rate_type": plan.rate_type},
+                    )
+                )
                 continue
 
-            filtered.append(plan)
+            eligible.append(plan)
 
-        return filtered
+        return eligible, filtered_out
 
     def _calculate_switching_cost(
         self,
