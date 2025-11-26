@@ -109,10 +109,7 @@ class CachedPlanService:
         )
 
         # Cache individual plans
-        plan_cache = {
-            CacheKeys.plan(str(p.id)): self._plan_to_dict(p)
-            for p in plans
-        }
+        plan_cache = {CacheKeys.plan(str(p.id)): self._plan_to_dict(p) for p in plans}
         await self.cache.set_many(plan_cache, ttl=PLAN_DETAIL_TTL)
 
         logger.info(f"Warmed cache with {len(plans)} plans")
@@ -129,8 +126,12 @@ class CachedPlanService:
             "rate_per_kwh": str(plan.rate_per_kwh),
             "monthly_fee": str(plan.monthly_fee),
             "contract_length_months": plan.contract_length_months,
-            "early_termination_fee": str(plan.early_termination_fee) if plan.early_termination_fee else None,
-            "cancellation_fee": str(plan.cancellation_fee) if plan.cancellation_fee else None,
+            "early_termination_fee": str(plan.early_termination_fee)
+            if plan.early_termination_fee
+            else None,
+            "cancellation_fee": str(plan.cancellation_fee)
+            if plan.cancellation_fee
+            else None,
             "renewable_percentage": plan.renewable_percentage,
             "is_active": plan.is_active,
             "supplier": {
@@ -138,8 +139,12 @@ class CachedPlanService:
                 "name": plan.supplier.name,
                 "rating": str(plan.supplier.rating) if plan.supplier.rating else None,
                 "website": plan.supplier.website,
-                "customer_service_rating": str(plan.supplier.customer_service_rating) if plan.supplier.customer_service_rating else None,
-            } if plan.supplier else None,
+                "customer_service_rating": str(plan.supplier.customer_service_rating)
+                if plan.supplier.customer_service_rating
+                else None,
+            }
+            if plan.supplier
+            else None,
         }
 
     def _dict_to_plan(self, data: dict) -> EnergyPlan:
@@ -154,15 +159,21 @@ class CachedPlanService:
 
         plan = EnergyPlan(
             id=UUIDType(data["id"]),
-            supplier_id=UUIDType(data["supplier_id"]) if data.get("supplier_id") else None,
+            supplier_id=UUIDType(data["supplier_id"])
+            if data.get("supplier_id")
+            else None,
             name=data["name"],
             description=data.get("description"),
             rate_type=data["rate_type"],
             rate_per_kwh=Decimal(data["rate_per_kwh"]),
             monthly_fee=Decimal(data["monthly_fee"]),
             contract_length_months=data["contract_length_months"],
-            early_termination_fee=Decimal(data["early_termination_fee"]) if data.get("early_termination_fee") else None,
-            cancellation_fee=Decimal(data["cancellation_fee"]) if data.get("cancellation_fee") else None,
+            early_termination_fee=Decimal(data["early_termination_fee"])
+            if data.get("early_termination_fee")
+            else None,
+            cancellation_fee=Decimal(data["cancellation_fee"])
+            if data.get("cancellation_fee")
+            else None,
             renewable_percentage=data["renewable_percentage"],
             is_active=data.get("is_active", True),
         )
@@ -175,7 +186,9 @@ class CachedPlanService:
                 name=s["name"],
                 rating=Decimal(s["rating"]) if s.get("rating") else None,
                 website=s.get("website"),
-                customer_service_rating=Decimal(s["customer_service_rating"]) if s.get("customer_service_rating") else None,
+                customer_service_rating=Decimal(s["customer_service_rating"])
+                if s.get("customer_service_rating")
+                else None,
             )
 
         return plan

@@ -58,167 +58,177 @@ def get_plans(suppliers: list[dict]) -> list[dict]:
     plans = []
 
     # Green Power Co plans
-    plans.extend([
-        {
-            "supplier_id": suppliers[0]["id"],
-            "name": "Green Basic",
-            "description": "Affordable green energy for budget-conscious households",
-            "rate_type": "fixed",
-            "rate_per_kwh": Decimal("0.095"),
-            "monthly_fee": Decimal("5.99"),
-            "contract_length_months": 12,
-            "early_termination_fee": Decimal("75.00"),
-            "renewable_percentage": 50,
-        },
-        {
-            "supplier_id": suppliers[0]["id"],
-            "name": "Green Premium",
-            "description": "100% renewable energy with premium service",
-            "rate_type": "fixed",
-            "rate_per_kwh": Decimal("0.125"),
-            "monthly_fee": Decimal("9.99"),
-            "contract_length_months": 24,
-            "early_termination_fee": Decimal("150.00"),
-            "renewable_percentage": 100,
-        },
-        {
-            "supplier_id": suppliers[0]["id"],
-            "name": "Green Flex",
-            "description": "Month-to-month green energy with no commitment",
-            "rate_type": "variable",
-            "rate_per_kwh": Decimal("0.115"),
-            "monthly_fee": Decimal("0.00"),
-            "contract_length_months": 1,
-            "early_termination_fee": Decimal("0.00"),
-            "renewable_percentage": 75,
-        },
-    ])
+    plans.extend(
+        [
+            {
+                "supplier_id": suppliers[0]["id"],
+                "name": "Green Basic",
+                "description": "Affordable green energy for budget-conscious households",
+                "rate_type": "fixed",
+                "rate_per_kwh": Decimal("0.095"),
+                "monthly_fee": Decimal("5.99"),
+                "contract_length_months": 12,
+                "early_termination_fee": Decimal("75.00"),
+                "renewable_percentage": 50,
+            },
+            {
+                "supplier_id": suppliers[0]["id"],
+                "name": "Green Premium",
+                "description": "100% renewable energy with premium service",
+                "rate_type": "fixed",
+                "rate_per_kwh": Decimal("0.125"),
+                "monthly_fee": Decimal("9.99"),
+                "contract_length_months": 24,
+                "early_termination_fee": Decimal("150.00"),
+                "renewable_percentage": 100,
+            },
+            {
+                "supplier_id": suppliers[0]["id"],
+                "name": "Green Flex",
+                "description": "Month-to-month green energy with no commitment",
+                "rate_type": "variable",
+                "rate_per_kwh": Decimal("0.115"),
+                "monthly_fee": Decimal("0.00"),
+                "contract_length_months": 1,
+                "early_termination_fee": Decimal("0.00"),
+                "renewable_percentage": 75,
+            },
+        ]
+    )
 
     # EcoEnergy Solutions plans
-    plans.extend([
-        {
-            "supplier_id": suppliers[1]["id"],
-            "name": "Eco Saver",
-            "description": "Low-cost energy with environmental responsibility",
-            "rate_type": "fixed",
-            "rate_per_kwh": Decimal("0.088"),
-            "monthly_fee": Decimal("7.99"),
-            "contract_length_months": 12,
-            "early_termination_fee": Decimal("100.00"),
-            "renewable_percentage": 35,
-        },
-        {
-            "supplier_id": suppliers[1]["id"],
-            "name": "Eco Max",
-            "description": "Maximum renewable energy percentage",
-            "rate_type": "fixed",
-            "rate_per_kwh": Decimal("0.135"),
-            "monthly_fee": Decimal("4.99"),
-            "contract_length_months": 18,
-            "early_termination_fee": Decimal("125.00"),
-            "renewable_percentage": 100,
-        },
-    ])
+    plans.extend(
+        [
+            {
+                "supplier_id": suppliers[1]["id"],
+                "name": "Eco Saver",
+                "description": "Low-cost energy with environmental responsibility",
+                "rate_type": "fixed",
+                "rate_per_kwh": Decimal("0.088"),
+                "monthly_fee": Decimal("7.99"),
+                "contract_length_months": 12,
+                "early_termination_fee": Decimal("100.00"),
+                "renewable_percentage": 35,
+            },
+            {
+                "supplier_id": suppliers[1]["id"],
+                "name": "Eco Max",
+                "description": "Maximum renewable energy percentage",
+                "rate_type": "fixed",
+                "rate_per_kwh": Decimal("0.135"),
+                "monthly_fee": Decimal("4.99"),
+                "contract_length_months": 18,
+                "early_termination_fee": Decimal("125.00"),
+                "renewable_percentage": 100,
+            },
+        ]
+    )
 
     # ValueElectric plans
-    plans.extend([
-        {
-            "supplier_id": suppliers[2]["id"],
-            "name": "Value Basic",
-            "description": "Simple, affordable electricity",
-            "rate_type": "fixed",
-            "rate_per_kwh": Decimal("0.082"),
-            "monthly_fee": Decimal("9.99"),
-            "contract_length_months": 12,
-            "early_termination_fee": Decimal("50.00"),
-            "renewable_percentage": 15,
-        },
-        {
-            "supplier_id": suppliers[2]["id"],
-            "name": "Value Plus",
-            "description": "Better rates with longer commitment",
-            "rate_type": "fixed",
-            "rate_per_kwh": Decimal("0.075"),
-            "monthly_fee": Decimal("12.99"),
-            "contract_length_months": 24,
-            "early_termination_fee": Decimal("175.00"),
-            "renewable_percentage": 20,
-        },
-        {
-            "supplier_id": suppliers[2]["id"],
-            "name": "Value Index",
-            "description": "Rates tied to wholesale market prices",
-            "rate_type": "indexed",
-            "rate_per_kwh": Decimal("0.078"),
-            "monthly_fee": Decimal("4.99"),
-            "contract_length_months": 6,
-            "early_termination_fee": Decimal("25.00"),
-            "renewable_percentage": 10,
-        },
-    ])
+    plans.extend(
+        [
+            {
+                "supplier_id": suppliers[2]["id"],
+                "name": "Value Basic",
+                "description": "Simple, affordable electricity",
+                "rate_type": "fixed",
+                "rate_per_kwh": Decimal("0.082"),
+                "monthly_fee": Decimal("9.99"),
+                "contract_length_months": 12,
+                "early_termination_fee": Decimal("50.00"),
+                "renewable_percentage": 15,
+            },
+            {
+                "supplier_id": suppliers[2]["id"],
+                "name": "Value Plus",
+                "description": "Better rates with longer commitment",
+                "rate_type": "fixed",
+                "rate_per_kwh": Decimal("0.075"),
+                "monthly_fee": Decimal("12.99"),
+                "contract_length_months": 24,
+                "early_termination_fee": Decimal("175.00"),
+                "renewable_percentage": 20,
+            },
+            {
+                "supplier_id": suppliers[2]["id"],
+                "name": "Value Index",
+                "description": "Rates tied to wholesale market prices",
+                "rate_type": "indexed",
+                "rate_per_kwh": Decimal("0.078"),
+                "monthly_fee": Decimal("4.99"),
+                "contract_length_months": 6,
+                "early_termination_fee": Decimal("25.00"),
+                "renewable_percentage": 10,
+            },
+        ]
+    )
 
     # SunState Energy plans
-    plans.extend([
-        {
-            "supplier_id": suppliers[3]["id"],
-            "name": "Solar Standard",
-            "description": "Solar-powered energy at competitive rates",
-            "rate_type": "fixed",
-            "rate_per_kwh": Decimal("0.105"),
-            "monthly_fee": Decimal("6.99"),
-            "contract_length_months": 12,
-            "early_termination_fee": Decimal("100.00"),
-            "renewable_percentage": 85,
-        },
-        {
-            "supplier_id": suppliers[3]["id"],
-            "name": "Solar Premium",
-            "description": "100% solar with time-of-use savings",
-            "rate_type": "time_of_use",
-            "rate_per_kwh": Decimal("0.098"),
-            "monthly_fee": Decimal("8.99"),
-            "contract_length_months": 24,
-            "early_termination_fee": Decimal("200.00"),
-            "renewable_percentage": 100,
-        },
-        {
-            "supplier_id": suppliers[3]["id"],
-            "name": "Solar Flex",
-            "description": "Flexible solar plan with no contract",
-            "rate_type": "variable",
-            "rate_per_kwh": Decimal("0.118"),
-            "monthly_fee": Decimal("0.00"),
-            "contract_length_months": 1,
-            "early_termination_fee": Decimal("0.00"),
-            "renewable_percentage": 90,
-        },
-    ])
+    plans.extend(
+        [
+            {
+                "supplier_id": suppliers[3]["id"],
+                "name": "Solar Standard",
+                "description": "Solar-powered energy at competitive rates",
+                "rate_type": "fixed",
+                "rate_per_kwh": Decimal("0.105"),
+                "monthly_fee": Decimal("6.99"),
+                "contract_length_months": 12,
+                "early_termination_fee": Decimal("100.00"),
+                "renewable_percentage": 85,
+            },
+            {
+                "supplier_id": suppliers[3]["id"],
+                "name": "Solar Premium",
+                "description": "100% solar with time-of-use savings",
+                "rate_type": "time_of_use",
+                "rate_per_kwh": Decimal("0.098"),
+                "monthly_fee": Decimal("8.99"),
+                "contract_length_months": 24,
+                "early_termination_fee": Decimal("200.00"),
+                "renewable_percentage": 100,
+            },
+            {
+                "supplier_id": suppliers[3]["id"],
+                "name": "Solar Flex",
+                "description": "Flexible solar plan with no contract",
+                "rate_type": "variable",
+                "rate_per_kwh": Decimal("0.118"),
+                "monthly_fee": Decimal("0.00"),
+                "contract_length_months": 1,
+                "early_termination_fee": Decimal("0.00"),
+                "renewable_percentage": 90,
+            },
+        ]
+    )
 
     # Budget Power plans
-    plans.extend([
-        {
-            "supplier_id": suppliers[4]["id"],
-            "name": "Budget Basic",
-            "description": "Lowest rates in the market",
-            "rate_type": "fixed",
-            "rate_per_kwh": Decimal("0.072"),
-            "monthly_fee": Decimal("14.99"),
-            "contract_length_months": 24,
-            "early_termination_fee": Decimal("200.00"),
-            "renewable_percentage": 5,
-        },
-        {
-            "supplier_id": suppliers[4]["id"],
-            "name": "Budget Flex",
-            "description": "Low rates without long-term commitment",
-            "rate_type": "variable",
-            "rate_per_kwh": Decimal("0.085"),
-            "monthly_fee": Decimal("8.99"),
-            "contract_length_months": 3,
-            "early_termination_fee": Decimal("0.00"),
-            "renewable_percentage": 10,
-        },
-    ])
+    plans.extend(
+        [
+            {
+                "supplier_id": suppliers[4]["id"],
+                "name": "Budget Basic",
+                "description": "Lowest rates in the market",
+                "rate_type": "fixed",
+                "rate_per_kwh": Decimal("0.072"),
+                "monthly_fee": Decimal("14.99"),
+                "contract_length_months": 24,
+                "early_termination_fee": Decimal("200.00"),
+                "renewable_percentage": 5,
+            },
+            {
+                "supplier_id": suppliers[4]["id"],
+                "name": "Budget Flex",
+                "description": "Low rates without long-term commitment",
+                "rate_type": "variable",
+                "rate_per_kwh": Decimal("0.085"),
+                "monthly_fee": Decimal("8.99"),
+                "contract_length_months": 3,
+                "early_termination_fee": Decimal("0.00"),
+                "renewable_percentage": 10,
+            },
+        ]
+    )
 
     return plans
 
@@ -229,6 +239,7 @@ async def seed_database(db: AsyncSession) -> None:
 
     # Check if data already exists
     from sqlalchemy import select
+
     result = await db.execute(select(Supplier).limit(1))
     if result.scalar_one_or_none():
         logger.info("Database already seeded, skipping...")

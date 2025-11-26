@@ -73,7 +73,9 @@ class ScoringEngine:
             )
 
             supplier_rating = (
-                float(plan.supplier.rating) if plan.supplier and plan.supplier.rating else 3.0
+                float(plan.supplier.rating)
+                if plan.supplier and plan.supplier.rating
+                else 3.0
             )
             rating_score = self._normalize(
                 Decimal(str(supplier_rating)),

@@ -63,17 +63,14 @@ async def init_db() -> None:
 
         # Only create tables that don't exist
         tables_to_create = [
-            table for table in Base.metadata.sorted_tables
-            if table.name not in existing
+            table for table in Base.metadata.sorted_tables if table.name not in existing
         ]
 
         if tables_to_create:
             # Create only missing tables
             await conn.run_sync(
                 lambda sync_conn: Base.metadata.create_all(
-                    sync_conn,
-                    tables=tables_to_create,
-                    checkfirst=True
+                    sync_conn, tables=tables_to_create, checkfirst=True
                 )
             )
 

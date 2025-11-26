@@ -35,9 +35,7 @@ class AuthenticatedUser:
 
 
 async def get_current_user(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(security)
-    ],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
 ) -> AuthenticatedUser | None:
     """Get current authenticated user from JWT token.
 
@@ -59,9 +57,7 @@ async def get_current_user(
 
 
 async def require_auth(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(security)
-    ],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
 ) -> AuthenticatedUser:
     """Require valid authentication.
 

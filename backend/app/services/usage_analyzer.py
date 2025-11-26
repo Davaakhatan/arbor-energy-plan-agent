@@ -189,9 +189,11 @@ class UsageAnalyzer:
 
         # Calculate variation percentage
         max_seasonal = max(summer_avg, winter_avg, shoulder_avg)
-        min_seasonal = min(
-            x for x in [summer_avg, winter_avg, shoulder_avg] if x > 0
-        ) if any([summer_avg, winter_avg, shoulder_avg]) else 0
+        min_seasonal = (
+            min(x for x in [summer_avg, winter_avg, shoulder_avg] if x > 0)
+            if any([summer_avg, winter_avg, shoulder_avg])
+            else 0
+        )
 
         variation = (
             ((max_seasonal - min_seasonal) / min_seasonal * 100)
@@ -286,9 +288,7 @@ class UsageAnalyzer:
 
         return Decimal(str(max(0, min(1, round(score, 2)))))
 
-    def _detect_gaps(
-        self, usage_data: list[CustomerUsage]
-    ) -> tuple[bool, list[int]]:
+    def _detect_gaps(self, usage_data: list[CustomerUsage]) -> tuple[bool, list[int]]:
         """Detect gaps in usage data."""
         if len(usage_data) < 2:
             return False, []
@@ -349,9 +349,7 @@ class UsageAnalyzer:
             gap_months=[],
         )
 
-    def get_plan_suitability_insights(
-        self, analysis: UsageAnalysis
-    ) -> dict[str, str]:
+    def get_plan_suitability_insights(self, analysis: UsageAnalysis) -> dict[str, str]:
         """Generate insights about plan suitability based on usage patterns."""
         insights = {}
 

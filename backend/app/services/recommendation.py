@@ -74,7 +74,9 @@ class RecommendationService:
         # Calculate current plan cost if available (cached)
         current_cost = None
         if customer.current_plan_id:
-            current_plan = await self.cached_plans.get_plan_by_id(customer.current_plan_id)
+            current_plan = await self.cached_plans.get_plan_by_id(
+                customer.current_plan_id
+            )
             if current_plan:
                 current_cost = self.cost_calculator.calculate_annual_cost(
                     customer.usage_data,
@@ -305,7 +307,10 @@ class RecommendationService:
             return Decimal("0.00")
 
         # Check if contract has ended
-        if customer.contract_end_date and customer.contract_end_date <= datetime.now(UTC).date():
+        if (
+            customer.contract_end_date
+            and customer.contract_end_date <= datetime.now(UTC).date()
+        ):
             return Decimal("0.00")
 
         return customer.early_termination_fee
@@ -394,7 +399,9 @@ class RecommendationService:
 
         # Lead with strongest benefit
         if scored["cost_score"] > 0.8:
-            parts.append(f"offers excellent value with projected annual savings of ${savings:.2f}")
+            parts.append(
+                f"offers excellent value with projected annual savings of ${savings:.2f}"
+            )
         elif savings > 0:
             parts.append(f"could save you ${savings:.2f} per year")
 
@@ -407,14 +414,24 @@ class RecommendationService:
             parts.append("offers flexible month-to-month or short-term commitment")
 
         # Mention supplier rating
-        if plan.supplier and plan.supplier.rating and plan.supplier.rating >= Decimal("4.0"):
+        if (
+            plan.supplier
+            and plan.supplier.rating
+            and plan.supplier.rating >= Decimal("4.0")
+        ):
             parts.append(f"from {plan.supplier.name}, a highly-rated supplier")
 
-        explanation = f"This plan {', '.join(parts)}." if parts else "This plan matches your preferences."
+        explanation = (
+            f"This plan {', '.join(parts)}."
+            if parts
+            else "This plan matches your preferences."
+        )
 
         details = {
             "cost_ranking": "top" if scored["cost_score"] > 0.8 else "competitive",
-            "renewable_level": "high" if plan.renewable_percentage >= 50 else "standard",
+            "renewable_level": "high"
+            if plan.renewable_percentage >= 50
+            else "standard",
             "flexibility": "high" if plan.contract_length_months <= 6 else "standard",
             "projected_savings": str(savings),
         }

@@ -25,7 +25,9 @@ class TestInputValidation:
                 json={"customer_id": malicious_id},
             )
             # Should return validation error, not 500
-            assert response.status_code in [400, 422], f"SQL injection not prevented: {malicious_id}"
+            assert response.status_code in [400, 422], (
+                f"SQL injection not prevented: {malicious_id}"
+            )
 
     async def test_xss_prevention_in_external_id(
         self,
@@ -77,8 +79,7 @@ class TestInputValidation:
         """Test rejection of excessively large payloads."""
         # Create very large usage data array
         large_usage_data = [
-            {"usage_date": f"2024-01-{i:02d}", "kwh_usage": 1000}
-            for i in range(1, 32)
+            {"usage_date": f"2024-01-{i:02d}", "kwh_usage": 1000} for i in range(1, 32)
         ] * 100  # 3100 entries
 
         response = await client.post(
@@ -161,8 +162,10 @@ class TestDataLeakagePrevention:
             response_text = response.text.lower()
             # Should not contain stack trace indicators
             assert "traceback" not in response_text
-            assert "file \"" not in response_text
-            assert "line " not in response_text or "line" in response_text  # Allow "line" in messages
+            assert 'file "' not in response_text
+            assert (
+                "line " not in response_text or "line" in response_text
+            )  # Allow "line" in messages
 
     async def test_no_internal_paths_in_errors(
         self,

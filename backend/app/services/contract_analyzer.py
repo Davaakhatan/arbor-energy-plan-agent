@@ -127,7 +127,9 @@ class ContractAnalyzer:
                 remaining_contract_cost=Decimal("0"),
                 new_plan_cost_same_period=Decimal("0"),
                 immediate_switch_savings=monthly_savings,
-                wait_to_switch_savings=annual_savings if annual_savings > 0 else Decimal("0"),
+                wait_to_switch_savings=annual_savings
+                if annual_savings > 0
+                else Decimal("0"),
                 not_beneficial_reason=not_beneficial_result["reason"],
                 confidence_score=not_beneficial_result["confidence"],
                 explanation=not_beneficial_result["explanation"],
@@ -137,9 +139,9 @@ class ContractAnalyzer:
         # Calculate break-even point (months to recover ETF)
         break_even_months = None
         if monthly_savings > 0 and early_termination_fee > 0:
-            break_even_months = int(
-                (early_termination_fee / monthly_savings).to_integral_value()
-            ) + 1
+            break_even_months = (
+                int((early_termination_fee / monthly_savings).to_integral_value()) + 1
+            )
 
         # No active contract - switch immediately
         if not has_active_contract:
@@ -204,7 +206,11 @@ class ContractAnalyzer:
                 )
         else:
             # ETF makes immediate switch not worthwhile
-            if break_even_months and months_remaining and break_even_months <= months_remaining:
+            if (
+                break_even_months
+                and months_remaining
+                and break_even_months <= months_remaining
+            ):
                 # Would break even before contract ends anyway
                 recommendation = SwitchRecommendation.WAIT_FOR_CONTRACT_END
                 optimal_date = current_contract_end
@@ -324,9 +330,9 @@ class ContractAnalyzer:
 
         # Scenario 3: ETF exceeds annual savings (takes over a year to break even)
         if early_termination_fee > 0 and early_termination_fee > annual_savings:
-            break_even_months = int(
-                (early_termination_fee / monthly_savings).to_integral_value()
-            ) + 1
+            break_even_months = (
+                int((early_termination_fee / monthly_savings).to_integral_value()) + 1
+            )
 
             if break_even_months > self.MAX_BREAK_EVEN_MONTHS:
                 return {
@@ -349,9 +355,9 @@ class ContractAnalyzer:
 
         # Scenario 4: Break-even period exceeds new contract length
         if early_termination_fee > 0 and monthly_savings > 0:
-            break_even_months = int(
-                (early_termination_fee / monthly_savings).to_integral_value()
-            ) + 1
+            break_even_months = (
+                int((early_termination_fee / monthly_savings).to_integral_value()) + 1
+            )
 
             if break_even_months > new_plan_contract_months:
                 return {
@@ -373,7 +379,12 @@ class ContractAnalyzer:
                 }
 
         # Scenario 5: Current contract ending very soon - marginal benefit
-        if has_active_contract and days_until_end and days_until_end <= 14 and early_termination_fee > 0:
+        if (
+            has_active_contract
+            and days_until_end
+            and days_until_end <= 14
+            and early_termination_fee > 0
+        ):
             # Contract ends in 2 weeks, might not be worth ETF hassle
             two_week_savings = monthly_savings / 2
             if early_termination_fee > two_week_savings * 3:  # ETF > 6 weeks savings
@@ -433,9 +444,8 @@ class ContractAnalyzer:
         total_stay_then_switch = stay_cost + then_new_cost
 
         # Cost if switching now (with ETF)
-        switch_now_cost = (
-            early_termination_fee +
-            new_monthly_cost * (months_remaining_current + new_contract_months)
+        switch_now_cost = early_termination_fee + new_monthly_cost * (
+            months_remaining_current + new_contract_months
         )
 
         # Which is better?
@@ -448,7 +458,5 @@ class ContractAnalyzer:
             "switch_now_total_cost": switch_now_cost,
             "etf_included": early_termination_fee,
             "savings_if_switch_now": savings_switching_now,
-            "recommendation": (
-                "switch_now" if savings_switching_now > 0 else "wait"
-            ),
+            "recommendation": ("switch_now" if savings_switching_now > 0 else "wait"),
         }

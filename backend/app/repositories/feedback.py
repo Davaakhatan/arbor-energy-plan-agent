@@ -70,18 +70,14 @@ class FeedbackRepository:
     async def get_recent(self, limit: int = 50) -> list[Feedback]:
         """Get recent feedback entries."""
         result = await self.db.execute(
-            select(Feedback)
-            .order_by(Feedback.created_at.desc())
-            .limit(limit)
+            select(Feedback).order_by(Feedback.created_at.desc()).limit(limit)
         )
         return list(result.scalars().all())
 
     async def get_stats(self) -> FeedbackStats:
         """Get feedback statistics."""
         # Total count
-        total_result = await self.db.execute(
-            select(func.count(Feedback.id))
-        )
+        total_result = await self.db.execute(select(func.count(Feedback.id)))
         total_count = total_result.scalar() or 0
 
         # Average rating (only where rating is not null)
@@ -135,8 +131,9 @@ class FeedbackRepository:
         # Feedback by type
         feedback_by_type = {}
         type_result = await self.db.execute(
-            select(Feedback.feedback_type, func.count(Feedback.id))
-            .group_by(Feedback.feedback_type)
+            select(Feedback.feedback_type, func.count(Feedback.id)).group_by(
+                Feedback.feedback_type
+            )
         )
         for row in type_result.all():
             feedback_by_type[row[0]] = row[1]

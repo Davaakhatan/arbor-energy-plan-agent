@@ -30,9 +30,7 @@ class TestDataIngestionService:
         assert len(records) == 3
         assert records[0].kwh_usage == Decimal("950")
 
-    def test_parse_csv_alternative_columns(
-        self, service: DataIngestionService
-    ) -> None:
+    def test_parse_csv_alternative_columns(self, service: DataIngestionService) -> None:
         """Test parsing CSV with alternative column names."""
         csv_content = """month,consumption
 2024-01-01,950

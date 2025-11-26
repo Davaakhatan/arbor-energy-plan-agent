@@ -475,7 +475,10 @@ class TestErrorHandling:
         # Should return empty recommendations or warning
         assert response.status_code == 200
         recommendations = response.json()
-        assert len(recommendations["recommendations"]) == 0 or len(recommendations.get("warnings", [])) > 0
+        assert (
+            len(recommendations["recommendations"]) == 0
+            or len(recommendations.get("warnings", [])) > 0
+        )
 
 
 @pytest.mark.asyncio
@@ -497,7 +500,7 @@ class TestPerformanceBenchmarks:
         for i in range(10):
             plan = EnergyPlan(
                 supplier_id=supplier.id,
-                name=f"Plan {i+1}",
+                name=f"Plan {i + 1}",
                 rate_type="fixed" if i % 2 == 0 else "variable",
                 rate_per_kwh=Decimal(f"0.{8 + i:02d}"),
                 monthly_fee=Decimal(str(5 + i)),
@@ -533,7 +536,9 @@ class TestPerformanceBenchmarks:
             times.append(end - start)
 
         avg_time = sum(times) / len(times)
-        assert avg_time < 2.0, f"Average recommendation time {avg_time:.2f}s exceeds 2s target"
+        assert avg_time < 2.0, (
+            f"Average recommendation time {avg_time:.2f}s exceeds 2s target"
+        )
 
         # Also verify the reported processing time
         last_response = response.json()

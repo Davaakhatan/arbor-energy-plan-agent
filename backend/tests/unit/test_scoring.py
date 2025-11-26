@@ -106,14 +106,10 @@ class TestScoringEngine:
             sample_plans[2].id: {"annual_cost": Decimal("1300")},  # Middle
         }
 
-        scored = engine.score_plans(
-            sample_plans, costs, cost_focused_preferences
-        )
+        scored = engine.score_plans(sample_plans, costs, cost_focused_preferences)
 
         # Sort by overall score
-        sorted_plans = sorted(
-            scored, key=lambda x: x["overall_score"], reverse=True
-        )
+        sorted_plans = sorted(scored, key=lambda x: x["overall_score"], reverse=True)
 
         # Cheapest plan should rank first with cost-focused preferences
         assert sorted_plans[0]["plan"].name == "Cheap Plan"
@@ -131,13 +127,9 @@ class TestScoringEngine:
             sample_plans[2].id: {"annual_cost": Decimal("1300")},
         }
 
-        scored = engine.score_plans(
-            sample_plans, costs, green_focused_preferences
-        )
+        scored = engine.score_plans(sample_plans, costs, green_focused_preferences)
 
-        sorted_plans = sorted(
-            scored, key=lambda x: x["overall_score"], reverse=True
-        )
+        sorted_plans = sorted(scored, key=lambda x: x["overall_score"], reverse=True)
 
         # 100% renewable plan should rank first with green-focused preferences
         assert sorted_plans[0]["plan"].name == "Green Plan"
@@ -155,9 +147,7 @@ class TestScoringEngine:
             sample_plans[2].id: {"annual_cost": Decimal("1300")},
         }
 
-        scored = engine.score_plans(
-            sample_plans, costs, cost_focused_preferences
-        )
+        scored = engine.score_plans(sample_plans, costs, cost_focused_preferences)
 
         for plan_score in scored:
             assert "cost_score" in plan_score

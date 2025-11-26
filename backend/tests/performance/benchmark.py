@@ -23,6 +23,7 @@ TARGET_RESPONSE_TIME = 2.0  # seconds
 @dataclass
 class BenchmarkResult:
     """Result of a benchmark test."""
+
     name: str
     total_requests: int
     successful_requests: int
@@ -42,7 +43,7 @@ def generate_usage_data(months: int = 12) -> list[dict]:
     return [
         {
             "usage_date": (date.today() - timedelta(days=30 * i)).isoformat(),
-            "kwh_usage": 1000 + (i * 50)
+            "kwh_usage": 1000 + (i * 50),
         }
         for i in range(months)
     ]
@@ -54,8 +55,8 @@ async def create_test_customer(client: httpx.AsyncClient) -> str | None:
         f"{BASE_URL}/api/v1/customers",
         json={
             "external_id": f"benchmark-{uuid4().hex[:8]}",
-            "usage_data": generate_usage_data(12)
-        }
+            "usage_data": generate_usage_data(12),
+        },
     )
     if response.status_code == 200:
         return response.json()["id"]
@@ -68,7 +69,7 @@ async def benchmark_endpoint(
     method: str,
     url: str,
     json_data: dict | None = None,
-    iterations: int = 100
+    iterations: int = 100,
 ) -> BenchmarkResult:
     """Benchmark a single endpoint."""
     times: list[float] = []
@@ -116,10 +117,14 @@ async def benchmark_endpoint(
         max_time=max(times),
         avg_time=statistics.mean(times),
         median_time=statistics.median(times),
-        p95_time=sorted_times[p95_index] if p95_index < len(sorted_times) else sorted_times[-1],
-        p99_time=sorted_times[p99_index] if p99_index < len(sorted_times) else sorted_times[-1],
+        p95_time=sorted_times[p95_index]
+        if p95_index < len(sorted_times)
+        else sorted_times[-1],
+        p99_time=sorted_times[p99_index]
+        if p99_index < len(sorted_times)
+        else sorted_times[-1],
         requests_per_second=iterations / total_time,
-        meets_target=statistics.mean(times) < TARGET_RESPONSE_TIME
+        meets_target=statistics.mean(times) < TARGET_RESPONSE_TIME,
     )
 
 
@@ -156,11 +161,7 @@ async def run_benchmarks() -> list[BenchmarkResult]:
 
         # 1. Health Check (baseline)
         result = await benchmark_endpoint(
-            client,
-            "Health Check",
-            "GET",
-            f"{BASE_URL}/api/v1/health",
-            iterations=200
+            client, "Health Check", "GET", f"{BASE_URL}/api/v1/health", iterations=200
         )
         print_result(result)
         results.append(result)
@@ -171,7 +172,7 @@ async def run_benchmarks() -> list[BenchmarkResult]:
             "Get Plans (cached)",
             "GET",
             f"{BASE_URL}/api/v1/plans",
-            iterations=100
+            iterations=100,
         )
         print_result(result)
         results.append(result)
@@ -194,7 +195,7 @@ async def run_benchmarks() -> list[BenchmarkResult]:
             "Get Customer",
             "GET",
             f"{BASE_URL}/api/v1/customers/{customer_ids[0]}",
-            iterations=100
+            iterations=100,
         )
         print_result(result)
         results.append(result)
@@ -204,7 +205,7 @@ async def run_benchmarks() -> list[BenchmarkResult]:
             "cost_savings_weight": 0.4,
             "flexibility_weight": 0.2,
             "renewable_weight": 0.2,
-            "supplier_rating_weight": 0.2
+            "supplier_rating_weight": 0.2,
         }
 
         result = await benchmark_endpoint(
@@ -212,11 +213,8 @@ async def run_benchmarks() -> list[BenchmarkResult]:
             "Generate Recommendations",
             "POST",
             f"{BASE_URL}/api/v1/recommendations",
-            json_data={
-                "customer_id": customer_ids[0],
-                "preferences": preferences
-            },
-            iterations=50
+            json_data={"customer_id": customer_ids[0], "preferences": preferences},
+            iterations=50,
         )
         print_result(result)
         results.append(result)
@@ -228,7 +226,7 @@ async def run_benchmarks() -> list[BenchmarkResult]:
             "PUT",
             f"{BASE_URL}/api/v1/preferences/{customer_ids[0]}",
             json_data=preferences,
-            iterations=50
+            iterations=50,
         )
         print_result(result)
         results.append(result)
@@ -239,14 +237,18 @@ async def run_benchmarks() -> list[BenchmarkResult]:
         concurrent_tasks = [
             client.post(
                 f"{BASE_URL}/api/v1/recommendations",
-                json={"customer_id": cid, "preferences": preferences}
+                json={"customer_id": cid, "preferences": preferences},
             )
             for cid in customer_ids
         ]
         responses = await asyncio.gather(*concurrent_tasks, return_exceptions=True)
         concurrent_time = time.perf_counter() - start
 
-        successful = sum(1 for r in responses if isinstance(r, httpx.Response) and r.status_code == 200)
+        successful = sum(
+            1
+            for r in responses
+            if isinstance(r, httpx.Response) and r.status_code == 200
+        )
         print(f"\n{'=' * 60}")
         print("Concurrent Recommendations (10 simultaneous)")
         print(f"{'=' * 60}")
@@ -268,7 +270,9 @@ async def run_benchmarks() -> list[BenchmarkResult]:
             print("❌ Some benchmarks failed target")
             for r in results:
                 if not r.meets_target:
-                    print(f"   - {r.name}: {r.avg_time * 1000:.2f}ms (target: <{TARGET_RESPONSE_TIME * 1000}ms)")
+                    print(
+                        f"   - {r.name}: {r.avg_time * 1000:.2f}ms (target: <{TARGET_RESPONSE_TIME * 1000}ms)"
+                    )
 
     return results
 

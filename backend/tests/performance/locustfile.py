@@ -41,10 +41,12 @@ class ArborEnergyUser(HttpUser):
                 seasonal_factor = random.uniform(0.9, 1.1)
 
             kwh = round(base_usage * seasonal_factor + random.uniform(-50, 50), 2)
-            usage_data.append({
-                "usage_date": usage_date.isoformat(),
-                "kwh_usage": max(100, kwh)  # Ensure positive usage
-            })
+            usage_data.append(
+                {
+                    "usage_date": usage_date.isoformat(),
+                    "kwh_usage": max(100, kwh),  # Ensure positive usage
+                }
+            )
 
         return usage_data
 
@@ -55,11 +57,8 @@ class ArborEnergyUser(HttpUser):
 
         response = self.client.post(
             "/api/v1/customers",
-            json={
-                "external_id": external_id,
-                "usage_data": usage_data
-            },
-            name="/api/v1/customers [POST]"
+            json={"external_id": external_id, "usage_data": usage_data},
+            name="/api/v1/customers [POST]",
         )
 
         if response.status_code == 200:
@@ -77,7 +76,7 @@ class ArborEnergyUser(HttpUser):
             "cost_savings_weight": random.uniform(0.2, 0.5),
             "flexibility_weight": random.uniform(0.1, 0.3),
             "renewable_weight": random.uniform(0.1, 0.3),
-            "supplier_rating_weight": random.uniform(0.1, 0.3)
+            "supplier_rating_weight": random.uniform(0.1, 0.3),
         }
 
         # Normalize weights
@@ -86,11 +85,8 @@ class ArborEnergyUser(HttpUser):
 
         self.client.post(
             "/api/v1/recommendations",
-            json={
-                "customer_id": self.customer_id,
-                "preferences": preferences
-            },
-            name="/api/v1/recommendations [POST]"
+            json={"customer_id": self.customer_id, "preferences": preferences},
+            name="/api/v1/recommendations [POST]",
         )
 
     @task(3)
@@ -100,8 +96,7 @@ class ArborEnergyUser(HttpUser):
             return
 
         self.client.get(
-            f"/api/v1/customers/{self.customer_id}",
-            name="/api/v1/customers/{id} [GET]"
+            f"/api/v1/customers/{self.customer_id}", name="/api/v1/customers/{id} [GET]"
         )
 
     @task(2)
@@ -116,24 +111,28 @@ class ArborEnergyUser(HttpUser):
             "renewable_weight": random.uniform(0.1, 0.3),
             "supplier_rating_weight": random.uniform(0.1, 0.3),
             "avoid_variable_rates": random.choice([True, False]),
-            "min_renewable_percentage": random.randint(0, 50)
+            "min_renewable_percentage": random.randint(0, 50),
         }
 
         # Normalize weights
         total = (
-            preferences["cost_savings_weight"] +
-            preferences["flexibility_weight"] +
-            preferences["renewable_weight"] +
-            preferences["supplier_rating_weight"]
+            preferences["cost_savings_weight"]
+            + preferences["flexibility_weight"]
+            + preferences["renewable_weight"]
+            + preferences["supplier_rating_weight"]
         )
-        for key in ["cost_savings_weight", "flexibility_weight",
-                    "renewable_weight", "supplier_rating_weight"]:
+        for key in [
+            "cost_savings_weight",
+            "flexibility_weight",
+            "renewable_weight",
+            "supplier_rating_weight",
+        ]:
             preferences[key] = round(preferences[key] / total, 2)
 
         self.client.put(
             f"/api/v1/preferences/{self.customer_id}",
             json=preferences,
-            name="/api/v1/preferences/{id} [PUT]"
+            name="/api/v1/preferences/{id} [PUT]",
         )
 
     @task(1)
@@ -164,12 +163,16 @@ class HighLoadUser(HttpUser):
             json={
                 "external_id": f"high-load-{uuid.uuid4().hex[:8]}",
                 "usage_data": [
-                    {"usage_date": (date.today() - timedelta(days=30 * i)).isoformat(),
-                     "kwh_usage": random.uniform(800, 1200)}
+                    {
+                        "usage_date": (
+                            date.today() - timedelta(days=30 * i)
+                        ).isoformat(),
+                        "kwh_usage": random.uniform(800, 1200),
+                    }
                     for i in range(12)
-                ]
+                ],
             },
-            name="/api/v1/customers [POST] (high-load)"
+            name="/api/v1/customers [POST] (high-load)",
         )
         if response.status_code == 200:
             return response.json().get("id")
@@ -189,10 +192,10 @@ class HighLoadUser(HttpUser):
                     "cost_savings_weight": 0.4,
                     "flexibility_weight": 0.2,
                     "renewable_weight": 0.2,
-                    "supplier_rating_weight": 0.2
-                }
+                    "supplier_rating_weight": 0.2,
+                },
             },
-            name="/api/v1/recommendations [POST] (high-load)"
+            name="/api/v1/recommendations [POST] (high-load)",
         )
 
 

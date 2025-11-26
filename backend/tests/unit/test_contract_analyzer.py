@@ -97,7 +97,9 @@ class TestContractAnalyzer:
         assert analysis.has_active_contract is True
         # $10/month * 2 months = $20 savings, minus $200 ETF = -$180
         assert analysis.immediate_switch_savings < 0
-        assert analysis.switch_recommendation == SwitchRecommendation.WAIT_FOR_CONTRACT_END
+        assert (
+            analysis.switch_recommendation == SwitchRecommendation.WAIT_FOR_CONTRACT_END
+        )
         assert analysis.optimal_switch_date == contract_end
 
     def test_contract_ending_soon(
@@ -154,9 +156,7 @@ class TestContractAnalyzer:
         # $120 ETF / $20 monthly savings = 6 months to break even
         assert analysis.break_even_months == 7  # Rounds up
 
-    def test_switching_windows(
-        self, analyzer: ContractAnalyzer, today: date
-    ) -> None:
+    def test_switching_windows(self, analyzer: ContractAnalyzer, today: date) -> None:
         """Test switching window calculations."""
         contract_end = today + timedelta(days=90)
 
@@ -230,9 +230,7 @@ class TestNotBeneficialDetection:
         """Fixed date for testing."""
         return date(2024, 6, 15)
 
-    def test_savings_too_small(
-        self, analyzer: ContractAnalyzer, today: date
-    ) -> None:
+    def test_savings_too_small(self, analyzer: ContractAnalyzer, today: date) -> None:
         """Test detection when savings are too small to be worthwhile."""
         analysis = analyzer.analyze_switch_timing(
             current_contract_end=None,
@@ -262,7 +260,10 @@ class TestNotBeneficialDetection:
 
         # $500 ETF / $20 monthly = 25 months to break even (>18 max)
         assert analysis.switch_recommendation == SwitchRecommendation.NOT_BENEFICIAL
-        assert analysis.not_beneficial_reason == NotBeneficialReason.ETF_EXCEEDS_ANNUAL_SAVINGS
+        assert (
+            analysis.not_beneficial_reason
+            == NotBeneficialReason.ETF_EXCEEDS_ANNUAL_SAVINGS
+        )
         assert analysis.break_even_months == 26
 
     def test_break_even_exceeds_contract_length(
@@ -345,9 +346,7 @@ class TestCostCalculation:
         """Create analyzer instance."""
         return ContractAnalyzer()
 
-    def test_calculate_switching_costs(
-        self, analyzer: ContractAnalyzer
-    ) -> None:
+    def test_calculate_switching_costs(self, analyzer: ContractAnalyzer) -> None:
         """Test comprehensive cost calculation."""
         result = analyzer.calculate_total_cost_of_switching(
             early_termination_fee=Decimal("150"),

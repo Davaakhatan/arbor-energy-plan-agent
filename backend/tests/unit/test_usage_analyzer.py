@@ -30,10 +30,10 @@ class TestUsageAnalyzer:
 
         # Monthly usage with summer peak
         monthly_kwh = {
-            1: 800,   # January - low
-            2: 750,   # February - low
-            3: 850,   # March
-            4: 900,   # April
+            1: 800,  # January - low
+            2: 750,  # February - low
+            3: 850,  # March
+            4: 900,  # April
             5: 1000,  # May
             6: 1400,  # June - high
             7: 1600,  # July - peak
@@ -65,15 +65,15 @@ class TestUsageAnalyzer:
             1: 1500,  # January - peak
             2: 1400,  # February - high
             3: 1100,  # March
-            4: 800,   # April
-            5: 700,   # May - low
-            6: 750,   # June - low
-            7: 800,   # July - low
-            8: 750,   # August - low
-            9: 850,   # September
-            10: 1000, # October
-            11: 1200, # November
-            12: 1450, # December - high
+            4: 800,  # April
+            5: 700,  # May - low
+            6: 750,  # June - low
+            7: 800,  # July - low
+            8: 750,  # August - low
+            9: 850,  # September
+            10: 1000,  # October
+            11: 1200,  # November
+            12: 1450,  # December - high
         }
 
         for month, kwh in monthly_kwh.items():
@@ -127,7 +127,11 @@ class TestUsageAnalyzer:
         analysis = analyzer.analyze(summer_peak_data)
 
         assert analysis.seasonal_pattern == SeasonalPattern.SUMMER_PEAK
-        assert 6 in analysis.peak_months or 7 in analysis.peak_months or 8 in analysis.peak_months
+        assert (
+            6 in analysis.peak_months
+            or 7 in analysis.peak_months
+            or 8 in analysis.peak_months
+        )
         assert analysis.seasonal_variation_percent > Decimal("0")
         assert analysis.months_of_data == 12
 
@@ -138,7 +142,11 @@ class TestUsageAnalyzer:
         analysis = analyzer.analyze(winter_peak_data)
 
         assert analysis.seasonal_pattern == SeasonalPattern.WINTER_PEAK
-        assert 1 in analysis.peak_months or 2 in analysis.peak_months or 12 in analysis.peak_months
+        assert (
+            1 in analysis.peak_months
+            or 2 in analysis.peak_months
+            or 12 in analysis.peak_months
+        )
         assert analysis.seasonal_variation_percent > Decimal("0")
 
     def test_analyze_flat_pattern(
@@ -282,7 +290,10 @@ class TestUsageAnalyzer:
         insights = analyzer.get_plan_suitability_insights(analysis)
 
         assert "seasonal" in insights
-        assert "summer" in insights["seasonal"].lower() or "air conditioning" in insights["seasonal"].lower()
+        assert (
+            "summer" in insights["seasonal"].lower()
+            or "air conditioning" in insights["seasonal"].lower()
+        )
 
     def test_plan_suitability_insights_high_consumer(
         self, analyzer: UsageAnalyzer, summer_peak_data: list[CustomerUsage]
@@ -302,16 +313,16 @@ class TestUsageAnalyzer:
 
         # High in both summer and winter
         monthly_kwh = {
-            1: 1400,   # January - high (heating)
-            2: 1350,   # February - high
-            3: 900,    # March - shoulder
-            4: 850,    # April
-            5: 900,    # May
-            6: 1300,   # June - high (AC)
-            7: 1500,   # July - peak
-            8: 1400,   # August - high
-            9: 950,    # September
-            10: 850,   # October
+            1: 1400,  # January - high (heating)
+            2: 1350,  # February - high
+            3: 900,  # March - shoulder
+            4: 850,  # April
+            5: 900,  # May
+            6: 1300,  # June - high (AC)
+            7: 1500,  # July - peak
+            8: 1400,  # August - high
+            9: 950,  # September
+            10: 850,  # October
             11: 1000,  # November
             12: 1350,  # December - high
         }
@@ -415,7 +426,10 @@ class TestUsageAnalyzer:
         insights = analyzer.get_plan_suitability_insights(analysis)
 
         assert "seasonal" in insights
-        assert "winter" in insights["seasonal"].lower() or "heating" in insights["seasonal"].lower()
+        assert (
+            "winter" in insights["seasonal"].lower()
+            or "heating" in insights["seasonal"].lower()
+        )
 
     def test_plan_suitability_insights_flat_pattern(
         self, analyzer: UsageAnalyzer, flat_usage_data: list[CustomerUsage]
@@ -425,7 +439,10 @@ class TestUsageAnalyzer:
         insights = analyzer.get_plan_suitability_insights(analysis)
 
         assert "seasonal" in insights
-        assert "consistent" in insights["seasonal"].lower() or "any rate" in insights["seasonal"].lower()
+        assert (
+            "consistent" in insights["seasonal"].lower()
+            or "any rate" in insights["seasonal"].lower()
+        )
 
     def test_plan_suitability_insights_increasing_trend(
         self, analyzer: UsageAnalyzer, increasing_trend_data: list[CustomerUsage]
@@ -437,9 +454,7 @@ class TestUsageAnalyzer:
         assert "trend" in insights
         assert "increasing" in insights["trend"].lower()
 
-    def test_annual_usage_estimation(
-        self, analyzer: UsageAnalyzer
-    ) -> None:
+    def test_annual_usage_estimation(self, analyzer: UsageAnalyzer) -> None:
         """Test that annual usage is estimated correctly from partial data."""
         customer_id = uuid4()
         data = []

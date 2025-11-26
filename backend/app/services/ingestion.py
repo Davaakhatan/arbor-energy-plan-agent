@@ -102,8 +102,12 @@ class DataIngestionService:
                 )
 
             fieldnames = [f.lower().strip() for f in reader.fieldnames]
-            date_col = self._find_column(fieldnames, date_column, ["date", "month", "period"])
-            usage_col = self._find_column(fieldnames, usage_column, ["kwh", "usage", "consumption", "kwh_usage"])
+            date_col = self._find_column(
+                fieldnames, date_column, ["date", "month", "period"]
+            )
+            usage_col = self._find_column(
+                fieldnames, usage_column, ["kwh", "usage", "consumption", "kwh_usage"]
+            )
 
             if date_col is None:
                 errors.append(f"Could not find date column. Expected: {date_column}")
@@ -326,4 +330,5 @@ class DataAnonymizer:
     def generate_synthetic_id() -> str:
         """Generate a random synthetic customer ID."""
         import secrets
+
         return f"synth-{secrets.token_hex(8)}"

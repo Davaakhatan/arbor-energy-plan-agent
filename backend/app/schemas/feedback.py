@@ -16,7 +16,9 @@ class FeedbackCreate(BaseModel):
         default="recommendation_rating",
         description="Type: recommendation_rating, plan_selected, general_feedback",
     )
-    rating: int | None = Field(default=None, ge=1, le=5, description="Rating from 1 to 5")
+    rating: int | None = Field(
+        default=None, ge=1, le=5, description="Rating from 1 to 5"
+    )
     was_helpful: bool | None = None
     switched_to_plan: bool | None = None
     comment: str | None = Field(default=None, max_length=2000)

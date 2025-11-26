@@ -61,7 +61,9 @@ async def detailed_health_check(
         cache_status = "unhealthy"
 
     overall_status = (
-        "healthy" if db_status == "healthy" and cache_status == "healthy" else "degraded"
+        "healthy"
+        if db_status == "healthy" and cache_status == "healthy"
+        else "degraded"
     )
 
     return DetailedHealthResponse(

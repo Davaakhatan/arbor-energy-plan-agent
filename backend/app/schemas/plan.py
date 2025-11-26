@@ -84,7 +84,9 @@ class EnergyPlanResponse(BaseModel):
     # Include supplier info
     supplier: SupplierResponse | None = None
 
-    @field_validator("cancellation_fee", "monthly_fee", "early_termination_fee", mode="before")
+    @field_validator(
+        "cancellation_fee", "monthly_fee", "early_termination_fee", mode="before"
+    )
     @classmethod
     def default_decimal_fields(cls, v: Any) -> Decimal:
         """Default decimal fields to 0.00 if None."""
