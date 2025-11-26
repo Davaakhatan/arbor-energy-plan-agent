@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import AsyncGenerator, Generator
 from decimal import Decimal
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
@@ -14,9 +15,35 @@ from app.main import app
 from app.models.customer import Customer, CustomerUsage
 from app.models.plan import EnergyPlan, Supplier
 from app.models.preference import CustomerPreference
+import app.core.redis as redis_module
 
 # Test database URL (SQLite for simplicity in tests)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+
+@pytest.fixture(autouse=True)
+def mock_redis():
+    """Mock Redis client for all tests."""
+    mock_client = MagicMock()
+    mock_client.get = AsyncMock(return_value=None)
+    mock_client.set = AsyncMock(return_value=True)
+    mock_client.setex = AsyncMock(return_value=True)
+    mock_client.delete = AsyncMock(return_value=1)
+    mock_client.exists = AsyncMock(return_value=0)
+    mock_client.keys = AsyncMock(return_value=[])
+    mock_client.ping = AsyncMock(return_value=True)
+    mock_client.mget = AsyncMock(return_value=[])
+    mock_client.incrby = AsyncMock(return_value=1)
+    mock_client.pipeline = MagicMock(return_value=MagicMock(execute=AsyncMock(return_value=[])))
+
+    # Patch the redis_client global
+    original_client = redis_module.redis_client
+    redis_module.redis_client = mock_client
+
+    yield mock_client
+
+    # Restore original
+    redis_module.redis_client = original_client
 
 
 @pytest.fixture(scope="session")
