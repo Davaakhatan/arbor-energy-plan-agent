@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Upload, FileText, CheckCircle, AlertCircle, Calculator } from "lucide-react";
-import { customerApi, ingestionApi } from "@/lib/api";
+import { Upload, FileText, CheckCircle, AlertCircle, Calculator, ChevronDown, ChevronUp } from "lucide-react";
+import { customerApi, ingestionApi, plansApi } from "@/lib/api";
 import { SmartDefaults } from "./SmartDefaults";
-import type { CustomerUsage } from "@/types";
+import type { CustomerUsage, EnergyPlan } from "@/types";
 
 interface UsageInputFormProps {
   onSubmit: (customerId: string) => void;
@@ -22,6 +22,26 @@ export function UsageInputForm({ onSubmit }: UsageInputFormProps) {
   const [uploadedCustomerId, setUploadedCustomerId] = useState<string | null>(null);
   const [showSmartDefaults, setShowSmartDefaults] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Current plan state
+  const [showCurrentPlan, setShowCurrentPlan] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState<EnergyPlan[]>([]);
+  const [currentPlanId, setCurrentPlanId] = useState<string>("");
+  const [contractEndDate, setContractEndDate] = useState<string>("");
+  const [earlyTerminationFee, setEarlyTerminationFee] = useState<string>("");
+
+  // Fetch available plans when component mounts
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const plans = await plansApi.list({ active_only: true });
+        setAvailablePlans(plans);
+      } catch (err) {
+        console.error("Failed to fetch plans:", err);
+      }
+    };
+    fetchPlans();
+  }, []);
 
   // Handle smart defaults generated data
   const handleSmartDefaultsGenerate = (data: CustomerUsage[]) => {
@@ -129,6 +149,9 @@ export function UsageInputForm({ onSubmit }: UsageInputFormProps) {
       const customer = await customerApi.create({
         external_id: externalId || `user-${Date.now()}`,
         usage_data: usageData,
+        current_plan_id: currentPlanId || undefined,
+        contract_end_date: contractEndDate || undefined,
+        early_termination_fee: earlyTerminationFee ? parseFloat(earlyTerminationFee) : undefined,
       });
 
       onSubmit(customer.id);
@@ -258,6 +281,80 @@ export function UsageInputForm({ onSubmit }: UsageInputFormProps) {
             {showSmartDefaults && (
               <SmartDefaults onGenerate={handleSmartDefaultsGenerate} />
             )}
+
+            {/* Current Plan Section */}
+            <div className="border-t pt-4">
+              <button
+                type="button"
+                onClick={() => setShowCurrentPlan(!showCurrentPlan)}
+                className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-700 hover:text-gray-900"
+                aria-expanded={showCurrentPlan}
+              >
+                <span>Do you have a current energy plan?</span>
+                {showCurrentPlan ? (
+                  <ChevronUp className="w-4 h-4" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                )}
+              </button>
+              <p className="text-xs text-gray-500 mt-1">
+                Adding your current plan allows us to calculate your potential savings
+              </p>
+
+              {showCurrentPlan && (
+                <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <label htmlFor="current-plan" className="block text-sm font-medium text-gray-700 mb-1">
+                      Select Your Current Plan
+                    </label>
+                    <select
+                      id="current-plan"
+                      value={currentPlanId}
+                      onChange={(e) => setCurrentPlanId(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      <option value="">Select a plan...</option>
+                      {availablePlans.map((plan) => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.supplier?.name || "Unknown"} - {plan.name} (${plan.rate_per_kwh}/kWh)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="contract-end" className="block text-sm font-medium text-gray-700 mb-1">
+                      Contract End Date
+                    </label>
+                    <input
+                      type="date"
+                      id="contract-end"
+                      value={contractEndDate}
+                      onChange={(e) => setContractEndDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">When does your current contract expire?</p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="etf" className="block text-sm font-medium text-gray-700 mb-1">
+                      Early Termination Fee ($)
+                    </label>
+                    <input
+                      type="number"
+                      id="etf"
+                      value={earlyTerminationFee}
+                      onChange={(e) => setEarlyTerminationFee(e.target.value)}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Fee charged if you switch before contract ends</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {uploadResult && (
               <div
