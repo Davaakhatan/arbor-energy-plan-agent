@@ -3,8 +3,9 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload, FileText, CheckCircle, AlertCircle, Calculator } from "lucide-react";
 import { customerApi, ingestionApi } from "@/lib/api";
+import { SmartDefaults } from "./SmartDefaults";
 import type { CustomerUsage } from "@/types";
 
 interface UsageInputFormProps {
@@ -19,7 +20,17 @@ export function UsageInputForm({ onSubmit }: UsageInputFormProps) {
   const [usageData, setUsageData] = useState<CustomerUsage[]>([]);
   const [externalId, setExternalId] = useState("");
   const [uploadedCustomerId, setUploadedCustomerId] = useState<string | null>(null);
+  const [showSmartDefaults, setShowSmartDefaults] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle smart defaults generated data
+  const handleSmartDefaultsGenerate = (data: CustomerUsage[]) => {
+    setUsageData(data);
+    setExternalId(`estimate-${Date.now()}`);
+    setUploadedCustomerId(null);
+    setUploadResult({ success: true, message: "Usage estimated based on your home profile" });
+    setShowSmartDefaults(false);
+  };
 
   // Generate sample 12-month usage data
   const generateSampleData = () => {
@@ -230,7 +241,23 @@ export function UsageInputForm({ onSubmit }: UsageInputFormProps) {
               <p className="text-xs text-gray-500 mt-2">
                 CSV format: date,kwh (e.g., 2024-01-01,1050)
               </p>
+              <div className="mt-3 pt-3 border-t">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => setShowSmartDefaults(!showSmartDefaults)}
+                  className="w-full text-gray-600"
+                >
+                  <Calculator className="w-4 h-4 mr-2" aria-hidden="true" />
+                  {showSmartDefaults ? "Hide Estimator" : "Don't have your data? Estimate based on home"}
+                </Button>
+              </div>
             </fieldset>
+
+            {/* Smart Defaults Estimator */}
+            {showSmartDefaults && (
+              <SmartDefaults onGenerate={handleSmartDefaultsGenerate} />
+            )}
 
             {uploadResult && (
               <div

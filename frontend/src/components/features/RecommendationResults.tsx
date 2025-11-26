@@ -45,6 +45,9 @@ import { CostProjectionChart } from "./CostProjectionChart";
 import { SavingsCalculator } from "./SavingsCalculator";
 import { ExportRecommendations } from "./ExportRecommendations";
 import { SwitchingGuide } from "./SwitchingGuide";
+import { ContractReminder } from "./ContractReminder";
+import { PriceAlerts } from "./PriceAlerts";
+import { HistoricalComparison } from "./HistoricalComparison";
 import type { Recommendation, RecommendationSet, UsageAnalysis, FilteredPlan } from "@/types";
 
 interface RecommendationResultsProps {
@@ -154,6 +157,27 @@ export function RecommendationResults({
       {plans.length > 0 && (
         <SwitchingGuide recommendation={plans[0]} />
       )}
+
+      {/* Historical Rate Comparison */}
+      <HistoricalComparison
+        recommendations={plans}
+        usageAnalysis={usage_analysis}
+        currentAnnualCost={current_annual_cost ? Number(current_annual_cost) : undefined}
+      />
+
+      {/* Contract Reminder & Price Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ContractReminder
+          contractEndDate={new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+          planName={plans[0]?.plan?.name}
+          providerName={plans[0]?.plan?.supplier?.name}
+          earlyTerminationFee={plans[0]?.plan?.early_termination_fee ? Number(plans[0].plan.early_termination_fee) : undefined}
+        />
+        <PriceAlerts
+          currentRate={plans[0]?.plan?.rate_per_kwh ? Number(plans[0].plan.rate_per_kwh) : undefined}
+          currentPlanName={plans[0]?.plan?.name}
+        />
+      </div>
 
       {/* Filtered Plans - "Why Not" Section */}
       {filtered_plans && filtered_plans.length > 0 && (
