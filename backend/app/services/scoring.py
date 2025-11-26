@@ -83,12 +83,19 @@ class ScoringEngine:
                 Decimal(str(max_rating)) if max_rating > 0 else Decimal(5),
             )
 
-            # Calculate weighted overall score
+            # Calculate weighted overall score (default to equal weights if None)
+            cost_weight = float(preferences.cost_savings_weight or Decimal("0.25"))
+            flexibility_weight = float(
+                preferences.flexibility_weight or Decimal("0.25")
+            )
+            renewable_weight = float(preferences.renewable_weight or Decimal("0.25"))
+            rating_weight = float(preferences.supplier_rating_weight or Decimal("0.25"))
+
             overall_score = (
-                float(preferences.cost_savings_weight) * cost_score
-                + float(preferences.flexibility_weight) * flexibility_score
-                + float(preferences.renewable_weight) * renewable_score
-                + float(preferences.supplier_rating_weight) * rating_score
+                cost_weight * cost_score
+                + flexibility_weight * flexibility_score
+                + renewable_weight * renewable_score
+                + rating_weight * rating_score
             )
 
             scored_plans.append(
@@ -101,10 +108,10 @@ class ScoringEngine:
                     "rating_score": round(rating_score, 4),
                     "overall_score": round(overall_score, 4),
                     "weights_applied": {
-                        "cost": float(preferences.cost_savings_weight),
-                        "flexibility": float(preferences.flexibility_weight),
-                        "renewable": float(preferences.renewable_weight),
-                        "rating": float(preferences.supplier_rating_weight),
+                        "cost": cost_weight,
+                        "flexibility": flexibility_weight,
+                        "renewable": renewable_weight,
+                        "rating": rating_weight,
                     },
                 }
             )
