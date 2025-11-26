@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # Application
     app_name: str = "Arbor Energy Plan Agent"
     app_version: str = "0.1.0"
-    environment: Literal["development", "staging", "production"] = "development"
+    environment: Literal["development", "staging", "production", "test"] = "development"
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
