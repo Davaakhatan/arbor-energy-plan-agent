@@ -44,8 +44,8 @@ class TestCostCalculator:
     def test_calculate_annual_cost_basic(
         self,
         calculator: CostCalculator,
-        sample_usage: list[CustomerUsage],
-        sample_plan: EnergyPlan,
+        sample_usage: list[Any],
+        sample_plan: Any,
     ) -> None:
         """Test basic annual cost calculation."""
         cost = calculator.calculate_annual_cost(sample_usage, sample_plan)
